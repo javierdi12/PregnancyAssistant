@@ -1,110 +1,310 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useState } from 'react';
+import {
+  Linking,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { Switch } from 'react-native-switch';
+// Reemplazar lucide-react con iconos compatibles
+import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-export default function TabTwoScreen() {
+export default function PrivacyScreen() {
+  const [dataUsageAccepted, setDataUsageAccepted] = useState(false);
+  const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false);
+
+  const handleAcceptNecessary = () => {
+    setDataUsageAccepted(true);
+    setPersonalizedAdsAccepted(false);
+  };
+
+  const handleAcceptAll = () => {
+    setDataUsageAccepted(true);
+    setPersonalizedAdsAccepted(true);
+  };
+
+  const handleContinue = () => {
+    console.log("Privacy settings:", {
+      dataUsage: dataUsageAccepted,
+      personalizedAds: personalizedAdsAccepted,
+    });
+  };
+
+  const handlePrivacyPolicyPress = () => {
+    Linking.openURL('https://tu-dominio.com/politica-privacidad');
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
+    <View style={styles.container}>
+      {/* Status Bar */}
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton}>
+          {/* Reemplazar ArrowLeft */}
+          <Ionicons name="arrow-back" size={20} color="#06B6D4" />
+          <ThemedText style={styles.backText}>Atrás</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Privacy Icon */}
+        <View style={styles.iconContainer}>
+          <View style={styles.iconCircle}>
+            {/* Reemplazar Lock */}
+            <MaterialIcons name="lock" size={48} color="#ffffff" />
+            <View style={styles.heartContainer}>
+              {/* Reemplazar Heart */}
+              <FontAwesome name="heart" size={24} color="#EC4899" />
+            </View>
+          </View>
+        </View>
+
+        {/* Title */}
+        <ThemedText style={styles.title}>Hablemos de privacidad</ThemedText>
+
+        {/* Privacy Options */}
+        <View style={styles.optionsContainer}>
+          {/* Data Usage Toggle */}
+          <View style={styles.optionRow}>
+            <Switch
+              value={dataUsageAccepted}
+              onValueChange={setDataUsageAccepted}
+              activeText=""
+              inActiveText=""
+              circleSize={24}
+              barHeight={28}
+              circleBorderWidth={0}
+              backgroundActive="#06B6D4"
+              backgroundInactive="#e5e5e5"
+              circleActiveColor="#ffffff"
+              circleInActiveColor="#ffffff"
+              changeValueImmediately={true}
+            />
+            <View style={styles.optionTextContainer}>
+              <ThemedText style={styles.optionText}>
+                Acepto el uso de mis <ThemedText style={styles.highlightText}>datos de la aplicación</ThemedText> (incluido
+                mi estado de embarazo) para recibir servicios en la aplicación.
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* Personalized Ads Toggle */}
+          <View style={styles.optionRow}>
+            <Switch
+              value={personalizedAdsAccepted}
+              onValueChange={setPersonalizedAdsAccepted}
+              activeText=""
+              inActiveText=""
+              circleSize={24}
+              barHeight={28}
+              circleBorderWidth={0}
+              backgroundActive="#06B6D4"
+              backgroundInactive="#e5e5e5"
+              circleActiveColor="#ffffff"
+              circleInActiveColor="#ffffff"
+              changeValueImmediately={true}
+            />
+            <View style={styles.optionTextContainer}>
+              <ThemedText style={styles.optionText}>
+                Acepto recibir <ThemedText style={styles.highlightText}>publicidad personalizada</ThemedText> en la
+                aplicación (opcional).
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+
+        {/* Privacy Policy Link */}
+        <ThemedText style={styles.privacyText}>
+          Para más información, consulte nuestra{' '}
+          <ThemedText style={styles.privacyLink} onPress={handlePrivacyPolicyPress}>
+            política de privacidad
+          </ThemedText>.
         </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonsContainer}>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={[styles.button, styles.necessaryButton]}
+              onPress={handleAcceptNecessary}
+            >
+              <ThemedText style={styles.necessaryButtonText}>Aceptar lo necesario</ThemedText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.button, styles.allButton]}
+              onPress={handleAcceptAll}
+            >
+              <ThemedText style={styles.allButtonText}>Aceptar todo</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.continueButton}
+            onPress={handleContinue}
+          >
+            <ThemedText style={styles.continueText}>Continuar</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Home Indicator (solo para iOS) */}
+      {Platform.OS === 'ios' && (
+        <View style={styles.homeIndicator}>
+          <View style={styles.homeIndicatorBar} />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
   },
-  titleContainer: {
+  header: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  backButton: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+  },
+  backText: {
+    color: '#06B6D4',
+    fontWeight: '500',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    backgroundColor: '#fbcfe8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  heartContainer: {
+    position: 'absolute',
+    bottom: -4,
+    left: '50%',
+    transform: [{ translateX: -12 }],
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#111827',
+    marginBottom: 32,
+    lineHeight: 32,
+  },
+  optionsContainer: {
+    gap: 24,
+    marginBottom: 32,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#374151',
+  },
+  highlightText: {
+    color: '#06B6D4',
+    fontWeight: '500',
+  },
+  privacyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#6b7280',
+    marginBottom: 48,
+    lineHeight: 20,
+  },
+  privacyLink: {
+    color: '#06B6D4',
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
+  buttonsContainer: {
+    gap: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  necessaryButton: {
+    backgroundColor: '#cffafe',
+    borderWidth: 1,
+    borderColor: '#a5f3fc',
+  },
+  allButton: {
+    backgroundColor: '#06B6D4',
+  },
+  necessaryButtonText: {
+    color: '#0891b2',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  allButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  continueButton: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  continueText: {
+    color: '#6b7280',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  homeIndicator: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f9fafb',
+  },
+  homeIndicatorBar: {
+    width: 128,
+    height: 4,
+    backgroundColor: '#000000',
+    borderRadius: 2,
   },
 });
