@@ -2,10 +2,11 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-
+LogBox.ignoreLogs(['useInsertionEffect must not schedule updates']);
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
