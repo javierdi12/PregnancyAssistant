@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -22,15 +23,7 @@ export default function PrivacyScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme(); 
 
-  
   const isDark = colorScheme === 'dark';
-  const colors = {
-    background: isDark ? '#111827' : '#f9fafb',
-    card: isDark ? '#1f2937' : '#ffffff',
-    border: isDark ? '#374151' : '#e5e5e5',
-    text: isDark ? '#f9fafb' : '#111827',
-    subtext: isDark ? '#9ca3af' : '#6b7280',
-  };
 
   const handleAcceptNecessary = () => {
     setDataUsageAccepted(true);
@@ -59,22 +52,22 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView style={styles.container}>
       {/* Status Bar */}
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.background}
+        translucent
       />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <ThemedView style={styles.header}>
         <TouchableOpacity style={styles.backButton}>
           <Ionicons name="arrow-back" size={20} color="#06B6D4" />
           <ThemedText style={[styles.backText, { color: '#06B6D4' }]}>
             Atrás
           </ThemedText>
         </TouchableOpacity>
-      </View>
+      </ThemedView>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Privacy Icon */}
@@ -88,7 +81,7 @@ export default function PrivacyScreen() {
         </View>
 
         {/* Title */}
-        <ThemedText style={[styles.title, { color: colors.text }]}>
+        <ThemedText style={styles.title}>
           Hablemos de privacidad
         </ThemedText>
 
@@ -97,7 +90,7 @@ export default function PrivacyScreen() {
           {/* Data Usage Toggle */}
           <View style={styles.optionRow}>
             <View style={styles.optionTextContainer}>
-              <ThemedText style={[styles.optionText, { color: colors.text }]}>
+              <ThemedText style={styles.optionText}>
                 Acepto el uso de mis{' '}
                 <ThemedText style={styles.highlightText}>
                   datos de la aplicación
@@ -126,7 +119,7 @@ export default function PrivacyScreen() {
           {/* Personalized Ads Toggle */}
           <View style={styles.optionRow}>
             <View style={styles.optionTextContainer}>
-              <ThemedText style={[styles.optionText, { color: colors.text }]}>
+              <ThemedText style={styles.optionText}>
                 Acepto recibir{' '}
                 <ThemedText style={styles.highlightText}>
                   publicidad personalizada
@@ -153,7 +146,7 @@ export default function PrivacyScreen() {
         </View>
 
         {/* Privacy Policy Link */}
-        <ThemedText style={[styles.privacyText, { color: colors.subtext }]}>
+        <ThemedText style={styles.privacyText}>
           Para más información, consulte nuestra{' '}
           <ThemedText
             style={styles.privacyLink}
@@ -185,7 +178,7 @@ export default function PrivacyScreen() {
           </View>
 
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <ThemedText style={[styles.continueText, { color: colors.subtext }]}>
+            <ThemedText style={styles.continueText}>
               Continuar
             </ThemedText>
           </TouchableOpacity>
@@ -200,12 +193,12 @@ export default function PrivacyScreen() {
         onRequestClose={() => setShowPrivacyModal(false)}
       >
         <View style={styles.modalBackground}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <ThemedText style={[styles.modalTitle, { color: colors.text }]}>
+          <ThemedView style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>
               Política de Privacidad
             </ThemedText>
             <ScrollView>
-              <ThemedText style={[styles.modalText, { color: colors.subtext }]}>
+              <ThemedText style={styles.modalText}>
                 Aquí van los términos y condiciones de privacidad. Explica cómo
                 se manejan los datos, seguridad, uso de información, etc. Puedes
                 poner texto largo y el modal será scrollable.
@@ -217,22 +210,22 @@ export default function PrivacyScreen() {
             >
               <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
             </TouchableOpacity>
-          </View>
+          </ThemedView>
         </View>
       </Modal>
 
       {/* Home Indicator (solo para iOS) */}
       {Platform.OS === 'ios' && (
-        <View style={[styles.homeIndicator, { backgroundColor: colors.background }]}>
+        <ThemedView style={styles.homeIndicator}>
           <View
             style={[
               styles.homeIndicatorBar,
               { backgroundColor: isDark ? '#9ca3af' : '#000000' },
             ]}
           />
-        </View>
+        </ThemedView>
       )}
-    </View>
+    </ThemedView>
   );
 }
 
