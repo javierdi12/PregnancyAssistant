@@ -1,13 +1,13 @@
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
+import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { auth } from '../../FireBase';
+
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { signOut } from "firebase/auth";
-import { useEffect } from 'react';
-import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { auth } from '../../FireBase';
 
 export default function HomeScreen() {
   // Redirect to login if not authenticated
@@ -20,10 +20,10 @@ export default function HomeScreen() {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      router.replace("/");
+      await auth.signOut();
+      router.replace('/');
     } catch (error) {
-      Alert.alert("Error", "Error al cerrar sesión: " + String(error));
+      Alert.alert('Error', 'Error al cerrar sesión: ' + String(error));
     }
   };
 
