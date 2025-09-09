@@ -99,10 +99,11 @@ export default function LoginScreen() {
     return (
       <SafeAreaView style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={isDarkMode ? '#BB86FC' : '#5C6BC0'} />
-        <Text style={styles.loadingText}>Cargando...</Text>
+        <Text style={styles.loadingText}>Cargando...</Text>  {/* ← OK */}
       </SafeAreaView>
     );
   }
+
 
   return (
     <SafeAreaView style={styles.container}>

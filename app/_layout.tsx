@@ -19,7 +19,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack />  {/* ← Solo esto, deja que Expo Router detecte tus rutas */}
+      <Stack />
       <StatusBar style="auto" />
     </ThemeProvider>
   );
