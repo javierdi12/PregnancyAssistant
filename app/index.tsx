@@ -76,8 +76,8 @@ export default function LoginScreen() {
       if (user && isMountedRef.current) {
         router.replace('/privacy');
       }
-    } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
+    } catch (err) {
+      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
       Alert.alert('Error', 'Error al iniciar sesión: ' + errorMsg);
     } finally {
       safeSetIsLoading(false);
@@ -91,8 +91,8 @@ export default function LoginScreen() {
       if (user && isMountedRef.current) {
         router.replace('/privacy');
       }
-    } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
+    } catch (err) {
+      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
       Alert.alert('Error', 'Error al crear cuenta: ' + errorMsg);
     } finally {
       safeSetIsLoading(false);
@@ -193,12 +193,12 @@ export default function LoginScreen() {
           
           const hashParams = new URLSearchParams(url.split('#')[1]);
           const accessToken = hashParams.get('access_token');
-          const error = hashParams.get('error');
+          const facebookError = hashParams.get('error');
           const errorReason = hashParams.get('error_reason');
           
           if (accessToken) {
             handleFacebookToken(accessToken);
-          } else if (error) {
+          } else if (facebookError) {
             const errorDescription = hashParams.get('error_description') || 'Error desconocido';
             
             if (errorDescription.includes('Invalid Scopes') || errorReason === 'user_denied') {
@@ -214,7 +214,8 @@ export default function LoginScreen() {
           
           popup.close();
         }
-      } catch (error) {
+      } catch (intervalError) {
+        console.error('Interval error:', intervalError); // Explicitly use intervalError
         // Error cross-origin normal, continuar verificando
       }
     }, 100) as unknown as IntervalHandle;
@@ -261,21 +262,21 @@ export default function LoginScreen() {
         console.log("Usuario autenticado:", userCredential.user.email);
         router.replace('/privacy');
       }
-    } catch (error: any) {
-      console.error('Error en autenticación:', error);
+    } catch (err: any) {
+      console.error('Error en autenticación:', err);
       
-      if (error.code === 'auth/account-exists-with-different-credential') {
+      if (err.code === 'auth/account-exists-with-different-credential') {
         Alert.alert(
           'Error', 
           'Ya existe una cuenta con el mismo email pero con un método de autenticación diferente.'
         );
-      } else if (error.message.includes('invalid scopes')) {
+      } else if (err.message.includes('invalid scopes')) {
         Alert.alert(
           'Error de configuración', 
           'La aplicación Facebook no tiene configurado correctamente el permiso de email.'
         );
       } else {
-        Alert.alert('Error', 'Error al autenticar con Facebook: ' + error.message);
+        Alert.alert('Error', 'Error al autenticar con Facebook: ' + err.message);
       }
       
       safeSetIsLoading(false);

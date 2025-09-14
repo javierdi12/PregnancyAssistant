@@ -1,18 +1,27 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { auth } from '../../FireBase';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
+
   // Redirect to login if not authenticated
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
       if (!user) router.replace('/');
     });
     return unsubscribe;
@@ -23,89 +32,113 @@ export default function HomeScreen() {
       await auth.signOut();
       router.replace('/');
     } catch (error) {
-      Alert.alert('Error', 'Error al cerrar sesión: ' + String(error));
+      Alert.alert('Error', 'Error signing out: ' + String(error));
     }
   };
 
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
+  const styles = getStyles(isDarkMode);
 
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.title}>Welcome to your Pregnancy Assistant</ThemedText>
+
+      {/* Daily Tip Section */}
+      <View style={styles.card}>
+        <ThemedText style={styles.cardTitle}>Daily Tip</ThemedText>
+        <ThemedText style={styles.cardText}>
+          Stay hydrated by drinking plenty of water throughout the day. It&apos;s important for both you and your baby.
         </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={{ alignItems: 'center', marginTop: 24 }}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
+      </View>
+
+      {/* Quick Actions Section */}
+      <View style={styles.quickActionsContainer}>
+        <TouchableOpacity
+          style={styles.quickActionButton}
+          onPress={() => router.push('/(tabs)/tracking')}>
+          <Feather name="list" size={24} color={styles.quickActionButtonText.color} />
+          <ThemedText style={styles.quickActionButtonText}>Pregnancy Tracking</ThemedText>
         </TouchableOpacity>
-      </ThemedView>
-    </ParallaxScrollView>
+
+        <TouchableOpacity
+          style={styles.quickActionButton}
+          onPress={() => router.push('/(tabs)/ai-assistant')}>
+          <Feather name="cpu" size={24} color={styles.quickActionButtonText.color} />
+          <ThemedText style={styles.quickActionButtonText}>AI Assistant</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sign Out Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+        <Text style={styles.logoutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </ThemedView>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  logoutButton: {
-    backgroundColor: '#FF3D00',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-});
+const getStyles = (isDarkMode: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 20,
+      justifyContent: 'center',
+      backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 30,
+      color: isDarkMode ? '#FFFFFF' : '#1A237E',
+    },
+    card: {
+      backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 30,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 10,
+      color: isDarkMode ? Colors.dark.tint : Colors.light.tint,
+    },
+    cardText: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: isDarkMode ? '#E0E0E0' : '#424242',
+    },
+    quickActionsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginBottom: 40,
+    },
+    quickActionButton: {
+      alignItems: 'center',
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
+      padding: 20,
+      borderRadius: 12,
+      width: '45%',
+    },
+    quickActionButtonText: {
+      marginTop: 10,
+      fontSize: 14,
+      fontWeight: '600',
+      color: isDarkMode ? '#FFFFFF' : '#333333',
+    },
+    logoutButton: {
+      backgroundColor: '#FF3D00',
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      alignSelf: 'center',
+    },
+    logoutText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+  });

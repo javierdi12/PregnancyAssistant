@@ -46,7 +46,7 @@ export default function PrivacyScreen() {
     }
 
     router.replace({
-      pathname: '/welcome',
+      pathname: '/(tabs)',
       params: { fromPrivacy: 'true', timestamp: Date.now() },
     });
   };
