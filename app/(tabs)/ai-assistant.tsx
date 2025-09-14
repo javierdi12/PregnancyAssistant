@@ -5,8 +5,10 @@ import { Colors } from '@/constants/Colors';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
-// NOTA: Solo para pruebas. En una aplicación real, NUNCA expongas claves API en el código del cliente.
-const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; // REEMPLAZA CON TU CLAVE API REAL DE GEMINI
+// NOTE: For testing purposes only. In a real application, NEVER expose API keys in client-side code.
+// This API key should be stored securely (e.g., in environment variables or a backend service).
+const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; // REPLACE WITH YOUR ACTUAL GEMINI API KEY
+
 
 export default function AIAssistantScreen() {
   const [dailyTip, setDailyTip] = useState<string | null>(null);
