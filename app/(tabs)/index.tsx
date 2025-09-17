@@ -1,28 +1,17 @@
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { auth } from '../../FireBase';
-
+// app/(tabs)/index.tsx
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { signOut } from "firebase/auth";
+import { signOut } from 'firebase/auth';
 import { useEffect } from 'react';
 import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { auth } from '../../Firebase';
-=======
->>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
->>>>>>> Stashed changes
 
 export default function HomeScreen() {
-  // Redirect to login if not authenticated
+  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) router.replace('/');
@@ -32,7 +21,7 @@ export default function HomeScreen() {
 
   const handleSignOut = async () => {
     try {
-      await auth.signOut();
+      await signOut(auth);
       router.replace('/');
     } catch (error) {
       Alert.alert('Error', 'Error al cerrar sesión: ' + String(error));
@@ -48,11 +37,11 @@ export default function HomeScreen() {
           style={styles.reactLogo}
         />
       }>
-
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
         <ThemedText>
@@ -68,22 +57,25 @@ export default function HomeScreen() {
           to open developer tools.
         </ThemedText>
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
         <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
+          Tap the Explore tab to learn more about what's included in this starter app.
         </ThemedText>
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
         <ThemedText>
-          {`When you're ready, run `}
+          When you're ready, run{' '}
           <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
           <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
           <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+
       <ThemedView style={{ alignItems: 'center', marginTop: 24 }}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
           <Text style={styles.logoutText}>Cerrar sesión</Text>

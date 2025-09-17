@@ -1,28 +1,13 @@
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-
-
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC6GNqi3h43U0bn31ijFz_0XYQ0H9EF-rw",
-  authDomain: "pregnancyassistant-1579f.firebaseapp.com",
+const firebaseConfig = 
+{ apiKey: "AIzaSyC6GNqi3h43U0bn31ijFz_0XYQ0H9EF-rw",
+ authDomain: "pregnancyassistant-1579f.firebaseapp.com",
   projectId: "pregnancyassistant-1579f",
-  storageBucket: "pregnancyassistant-1579f.appspot.com",
-  messagingSenderId: "265408256669",
-  appId: "1:265408256669:web:48eddf9464c881d7ac1274"
-};
+   storageBucket: "pregnancyassistant-1579f.appspot.com",
+    messagingSenderId: "265408256669",
+     appId: "1:265408256669:web:48eddf9464c881d7ac1274" };
 
-<<<<<<< HEAD
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-=======
-export const app = initializeApp(firebaseConfig);
-
-
-export const auth = getAuth(app);
-
-<<<<<<< Updated upstream
-=======
->>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
->>>>>>> Stashed changes
