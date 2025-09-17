@@ -8,6 +8,18 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { signOut } from "firebase/auth";
+import { useEffect } from 'react';
+import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { auth } from '../../Firebase';
+=======
+>>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
+>>>>>>> Stashed changes
 
 export default function HomeScreen() {
   // Redirect to login if not authenticated

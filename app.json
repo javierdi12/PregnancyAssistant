@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.preganassist.PregnancyAssistant",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,6 +26,15 @@
     },
     "plugins": [
       "expo-router",
+        "expo-auth-session",
+        "expo-application",
+        
+      [
+        
+        {
+          "origin": "https://auth.expo.io"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -34,7 +44,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "react-native-edge-to-edge"
     ],
     "experiments": {
       "typedRoutes": true

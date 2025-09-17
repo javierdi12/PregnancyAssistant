@@ -13,8 +13,16 @@ const firebaseConfig = {
   appId: "1:265408256669:web:48eddf9464c881d7ac1274"
 };
 
+<<<<<<< HEAD
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+=======
 export const app = initializeApp(firebaseConfig);
 
 
 export const auth = getAuth(app);
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
+>>>>>>> Stashed changes
