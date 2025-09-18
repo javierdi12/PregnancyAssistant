@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
@@ -23,7 +24,7 @@ import { auth } from '../FireBase';
 
 const FACEBOOK_APP_ID = '1892374498008258';
 
-// Definir tipos para los intervalos (solución para React Native/TypeScript)
+// Definir tipos para los intervalos
 type IntervalHandle = ReturnType<typeof setInterval>;
 type TimeoutHandle = ReturnType<typeof setTimeout>;
 
@@ -39,13 +40,30 @@ export default function LoginScreen() {
   const intervalRef = useRef<IntervalHandle | null>(null);
   const timeoutRef = useRef<TimeoutHandle | null>(null);
 
-  // If the user is ALREADY logged in, send them directly to tabs
+  // Función para verificar si aceptó términos
+  const checkTermsAccepted = async (): Promise<boolean> => {
+    try {
+      const termsAccepted = await AsyncStorage.getItem('terms_accepted');
+      return termsAccepted === 'true';
+    } catch (error) {
+      console.error('Error checking terms:', error);
+      return false;
+    }
+  };
+
+  // Redirección basada en estado de login y términos
   useEffect(() => {
     isMountedRef.current = true;
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        
+        if (termsAccepted) {
+          router.replace('/(tabs)'); // → Va a tabs si aceptó términos
+        } else {
+          router.replace('/privacy'); // → Va a privacy si no aceptó
+        }
       }
     });
 
@@ -74,10 +92,15 @@ export default function LoginScreen() {
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
-    } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
+    } catch (err) {
+      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
       Alert.alert('Error', 'Error al iniciar sesión: ' + errorMsg);
     } finally {
       safeSetIsLoading(false);
@@ -89,10 +112,15 @@ export default function LoginScreen() {
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
-    } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
+    } catch (err) {
+      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
       Alert.alert('Error', 'Error al crear cuenta: ' + errorMsg);
     } finally {
       safeSetIsLoading(false);
@@ -106,11 +134,9 @@ export default function LoginScreen() {
   const handleFacebookSignIn = async () => {
     safeSetIsLoading(true);
     try {
-      // INTENTAR LOGIN EN TODAS LAS PLATAFORMAS
       if (Platform.OS === 'web') {
         await handleFacebookWebLogin();
       } else {
-        // En iOS/Android, mostrar mensaje y redirigir a login web
         Alert.alert(
           'Login con Facebook',
           'Para iOS y Android, necesitamos redirigirte al navegador para completar el login. ¿Quieres continuar?',
@@ -135,17 +161,13 @@ export default function LoginScreen() {
   };
 
   const handleFacebookMobileRedirect = () => {
-    // Redirigir a la URL de Facebook para login en móvil
     const redirectUri = `https://${window.location.hostname || 'localhost'}`;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
-    
-    // Abrir en el navegador
     window.location.href = authUrl;
   };
 
   const handleFacebookWebLogin = async () => {
     const redirectUri = window.location.origin;
-    
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
     
     const width = 600;
@@ -168,11 +190,9 @@ export default function LoginScreen() {
     popupRef.current = popup;
     let popupClosed = false;
     
-    // Limpiar intervalos previos
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     
-    // SOLUCIÓN: Usar el tipo correcto para setInterval
     intervalRef.current = setInterval(() => {
       try {
         if (!isMountedRef.current) {
@@ -193,12 +213,12 @@ export default function LoginScreen() {
           
           const hashParams = new URLSearchParams(url.split('#')[1]);
           const accessToken = hashParams.get('access_token');
-          const error = hashParams.get('error');
+          const facebookError = hashParams.get('error');
           const errorReason = hashParams.get('error_reason');
           
           if (accessToken) {
             handleFacebookToken(accessToken);
-          } else if (error) {
+          } else if (facebookError) {
             const errorDescription = hashParams.get('error_description') || 'Error desconocido';
             
             if (errorDescription.includes('Invalid Scopes') || errorReason === 'user_denied') {
@@ -214,12 +234,11 @@ export default function LoginScreen() {
           
           popup.close();
         }
-      } catch (error) {
-        // Error cross-origin normal, continuar verificando
+      } catch (intervalError) {
+        console.error('Interval error:', intervalError);
       }
     }, 100) as unknown as IntervalHandle;
     
-    // SOLUCIÓN: Usar el tipo correcto para setTimeout
     timeoutRef.current = setTimeout(() => {
       if (!popupClosed && isMountedRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -258,24 +277,28 @@ export default function LoginScreen() {
       const userCredential = await signInWithCredential(auth, credential);
       
       if (userCredential.user && isMountedRef.current) {
-        console.log("Usuario autenticado:", userCredential.user.email);
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
-    } catch (error: any) {
-      console.error('Error en autenticación:', error);
+    } catch (err: any) {
+      console.error('Error en autenticación:', err);
       
-      if (error.code === 'auth/account-exists-with-different-credential') {
+      if (err.code === 'auth/account-exists-with-different-credential') {
         Alert.alert(
           'Error', 
           'Ya existe una cuenta con el mismo email pero con un método de autenticación diferente.'
         );
-      } else if (error.message.includes('invalid scopes')) {
+      } else if (err.message.includes('invalid scopes')) {
         Alert.alert(
           'Error de configuración', 
           'La aplicación Facebook no tiene configurado correctamente el permiso de email.'
         );
       } else {
-        Alert.alert('Error', 'Error al autenticar con Facebook: ' + error.message);
+        Alert.alert('Error', 'Error al autenticar con Facebook: ' + err.message);
       }
       
       safeSetIsLoading(false);

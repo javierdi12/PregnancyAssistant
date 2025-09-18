@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
@@ -34,10 +33,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="privacy"
+        name="tracking"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Tracking',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.clipboard" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-assistant"
+        options={{
+          title: 'AI Assistant',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Mi Perfil',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
       <Tabs.Screen

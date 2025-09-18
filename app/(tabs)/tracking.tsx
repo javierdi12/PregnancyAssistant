@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Image, TextInput, TouchableOpacity, Alert, ActivityIndicator, FlatList, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  Text,
+  View,
+  useColorScheme,
+} from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import Colors from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { auth, db } from '../../FireBase';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+} from 'firebase/firestore';
 
 // Interfaces for data structures
 interface Vitals {
@@ -26,9 +45,9 @@ interface Symptom {
 
 interface Appointment {
   id: string;
-  appointmentDate: string;
-  appointmentTime: string;
-  appointmentNotes: string;
+  date: string;
+  time: string;
+  notes: string;
   createdAt: Timestamp;
 }
 
@@ -38,7 +57,7 @@ export default function TrackingScreen() {
   const styles = getStyles(isDarkMode);
 
   // State for Fetal Development
-  const [currentWeek, setCurrentWeek] = useState<number>(10); // Default week
+  const [currentWeek, setCurrentWeek] = useState<number>(10);
 
   // State for Vitals
   const [weight, setWeight] = useState<string>('');
@@ -67,33 +86,23 @@ export default function TrackingScreen() {
       return;
     }
 
-    const fetchVitals = () => {
-      const q = query(collection(db, 'users', userId, 'vitals'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const vitalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vitals));
-        setVitalsList(vitalsData);
-      });
-    };
+    const vitalsQuery = query(collection(db, 'users', userId, 'vitals'), orderBy('createdAt', 'desc'));
+    const unsubscribeVitals = onSnapshot(vitalsQuery, (snapshot) => {
+      const vitalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vitals));
+      setVitalsList(vitalsData);
+    });
 
-    const fetchSymptoms = () => {
-      const q = query(collection(db, 'users', userId, 'symptoms'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const symptomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Symptom));
-        setSymptomsList(symptomsData);
-      });
-    };
+    const symptomsQuery = query(collection(db, 'users', userId, 'symptoms'), orderBy('createdAt', 'desc'));
+    const unsubscribeSymptoms = onSnapshot(symptomsQuery, (snapshot) => {
+      const symptomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Symptom));
+      setSymptomsList(symptomsData);
+    });
 
-    const fetchAppointments = () => {
-      const q = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
-        setAppointmentsList(appointmentsData);
-      });
-    };
-
-    const unsubscribeVitals = fetchVitals();
-    const unsubscribeSymptoms = fetchSymptoms();
-    const unsubscribeAppointments = fetchAppointments();
+    const appointmentsQuery = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
+    const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
+      const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+      setAppointmentsList(appointmentsData);
+    });
 
     setLoading(false);
 
@@ -106,7 +115,7 @@ export default function TrackingScreen() {
 
   const handleSaveVitals = async () => {
     if (!userId || !weight || !bloodPressure) {
-      Alert.alert('Error', 'Please enter weight and blood pressure.');
+      Alert.alert('Error', 'Por favor, ingrese el peso y la presión arterial.');
       return;
     }
     try {
@@ -118,16 +127,16 @@ export default function TrackingScreen() {
       });
       setWeight('');
       setBloodPressure('');
-      Alert.alert('Success', 'Vitals saved successfully!');
+      Alert.alert('Éxito', '¡Signos vitales guardados con éxito!');
     } catch (error) {
       console.error('Error saving vitals: ', error);
-      Alert.alert('Error', 'Failed to save vitals.');
+      Alert.alert('Error', 'No se pudieron guardar los signos vitales.');
     }
   };
 
   const handleSaveSymptom = async () => {
     if (!userId || !symptom) {
-      Alert.alert('Error', 'Please enter a symptom.');
+      Alert.alert('Error', 'Por favor, ingrese un síntoma.');
       return;
     }
     try {
@@ -137,235 +146,237 @@ export default function TrackingScreen() {
         createdAt: serverTimestamp(),
       });
       setSymptom('');
-      Alert.alert('Success', 'Symptom saved successfully!');
+      Alert.alert('Éxito', '¡Síntoma guardado con éxito!');
     } catch (error) {
       console.error('Error saving symptom: ', error);
-      Alert.alert('Error', 'Failed to save symptom.');
+      Alert.alert('Error', 'No se pudo guardar el síntoma.');
     }
   };
 
   const handleSaveAppointment = async () => {
-    if (!userId || !appointmentDate || !appointmentTime || !appointmentNotes) {
-      Alert.alert('Error', 'Please fill all appointment fields.');
+    if (!userId || !appointmentDate || !appointmentTime) {
+      Alert.alert('Error', 'Por favor, complete la fecha y hora de la cita.');
       return;
     }
     try {
       await addDoc(collection(db, 'users', userId, 'appointments'), {
-        appointmentDate,
-        appointmentTime,
-        appointmentNotes,
+        date: appointmentDate,
+        time: appointmentTime,
+        notes: appointmentNotes,
         createdAt: serverTimestamp(),
       });
       setAppointmentDate('');
       setAppointmentTime('');
       setAppointmentNotes('');
-      Alert.alert('Success', 'Appointment saved successfully!');
+      Alert.alert('Éxito', '¡Cita guardada con éxito!');
     } catch (error) {
       console.error('Error saving appointment: ', error);
-      Alert.alert('Error', 'Failed to save appointment.');
+      Alert.alert('Error', 'No se pudo guardar la cita.');
     }
+  };
+  
+  const getFetusImage = (week: number) => {
+    return `https://via.placeholder.com/300x300.png?text=Feto+Semana+${week}`;
   };
 
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={isDarkMode ? Colors.dark.tint : Colors.light.tint} />
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* Fetal Development Tracking */}
-        <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
-          <Image
-            source={{ uri: `https://via.placeholder.com/300x300.png?text=Feto+Semana+${currentWeek}` }}
-            style={styles.fetalImage}
-          />
-          <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
-        </ThemedView>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollViewContent}>
+      {/* Fetal Development Tracking */}
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
+        <Image
+          source={{ uri: getFetusImage(currentWeek) }}
+          style={styles.fetalImage}
+        />
+        <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
+      </ThemedView>
 
-        {/* Vitals Tracking */}
-        <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Seguimiento de Signos Vitales</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="Peso (kg)"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            keyboardType="numeric"
-            value={weight}
-            onChangeText={setWeight}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Presión Arterial (ej. 120/80)"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            value={bloodPressure}
-            onChangeText={setBloodPressure}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSaveVitals}>
-            <ThemedText style={styles.buttonText}>Guardar Signos Vitales</ThemedText>
-          </TouchableOpacity>
+      {/* Vitals Tracking */}
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Seguimiento de Signos Vitales</ThemedText>
+        <TextInput
+          style={styles.input}
+          placeholder="Peso (kg)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          keyboardType="numeric"
+          value={weight}
+          onChangeText={setWeight}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Presión Arterial (ej. 120/80)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          value={bloodPressure}
+          onChangeText={setBloodPressure}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSaveVitals}>
+          <Text style={styles.buttonText}>Guardar Signos Vitales</Text>
+        </TouchableOpacity>
 
-          <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
-          <FlatList
-            data={vitalsList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ThemedView style={styles.listItem}>
-                <ThemedText>Peso: {item.weight} kg</ThemedText>
-                <ThemedText>Presión: {item.bloodPressure}</ThemedText>
-                <ThemedText>Fecha: {item.date}</ThemedText>
-              </ThemedView>
-            )}
-            ListEmptyComponent={<ThemedText style={styles.emptyListText}>No hay signos vitales registrados.</ThemedText>}
-          />
-        </ThemedView>
+        <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
+        <FlatList
+          data={vitalsList}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.listItem}>
+              <Text style={styles.logText}>Peso: {item.weight} kg, Presión: {item.bloodPressure}</Text>
+              <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
+            </View>
+          )}
+          ListEmptyComponent={<Text style={styles.emptyListText}>No hay signos vitales registrados.</Text>}
+        />
+      </ThemedView>
 
-        {/* Symptom Logging */}
-        <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Registro de Síntomas</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="Describe tu síntoma"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            value={symptom}
-            onChangeText={setSymptom}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSaveSymptom}>
-            <ThemedText style={styles.buttonText}>Guardar Síntoma</ThemedText>
-          </TouchableOpacity>
+      {/* Symptom Logging */}
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Registro de Síntomas</ThemedText>
+        <TextInput
+          style={styles.input}
+          placeholder="Describe tu síntoma"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          value={symptom}
+          onChangeText={setSymptom}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSaveSymptom}>
+          <Text style={styles.buttonText}>Guardar Síntoma</Text>
+        </TouchableOpacity>
 
-          <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
-          <FlatList
-            data={symptomsList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ThemedView style={styles.listItem}>
-                <ThemedText>Síntoma: {item.symptom}</ThemedText>
-                <ThemedText>Fecha: {item.date}</ThemedText>
-              </ThemedView>
-            )}
-            ListEmptyComponent={<ThemedText style={styles.emptyListText}>No hay síntomas registrados.</ThemedText>}
-          />
-        </ThemedView>
+        <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
+        <FlatList
+          data={symptomsList}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.listItem}>
+              <Text style={styles.logText}>{item.symptom}</Text>
+              <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
+            </View>
+          )}
+          ListEmptyComponent={<Text style={styles.emptyListText}>No hay síntomas registrados.</Text>}
+        />
+      </ThemedView>
 
-        {/* Medical Appointments */}
-        <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Gestión de Citas Médicas</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="Fecha (DD/MM/AAAA)"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            value={appointmentDate}
-            onChangeText={setAppointmentDate}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Hora (HH:MM)"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            value={appointmentTime}
-            onChangeText={setAppointmentTime}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Notas de la cita"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-            multiline
-            numberOfLines={3}
-            value={appointmentNotes}
-            onChangeText={setAppointmentNotes}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSaveAppointment}>
-            <ThemedText style={styles.buttonText}>Guardar Cita</ThemedText>
-          </TouchableOpacity>
+      {/* Medical Appointments */}
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Gestión de Citas Médicas</ThemedText>
+        <TextInput
+          style={styles.input}
+          placeholder="Fecha (DD/MM/AAAA)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          value={appointmentDate}
+          onChangeText={setAppointmentDate}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Hora (HH:MM)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          value={appointmentTime}
+          onChangeText={setAppointmentTime}
+        />
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Notas de la cita"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          multiline
+          numberOfLines={3}
+          value={appointmentNotes}
+          onChangeText={setAppointmentNotes}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSaveAppointment}>
+          <Text style={styles.buttonText}>Guardar Cita</Text>
+        </TouchableOpacity>
 
-          <ThemedText style={styles.listTitle}>Próximas Citas</ThemedText>
-          <FlatList
-            data={appointmentsList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ThemedView style={styles.listItem}>
-                <ThemedText>Fecha: {item.appointmentDate}</ThemedText>
-                <ThemedText>Hora: {item.appointmentTime}</ThemedText>
-                <ThemedText>Notas: {item.appointmentNotes}</ThemedText>
-              </ThemedView>
-            )}
-            ListEmptyComponent={<ThemedText style={styles.emptyListText}>No hay citas registradas.</ThemedText>}
-          />
-        </ThemedView>
-      </ScrollView>
-    </ThemedView>
+        <ThemedText style={styles.listTitle}>Próximas Citas</ThemedText>
+        <FlatList
+          data={appointmentsList}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.listItem}>
+              <Text style={styles.logTextBold}>{item.date} a las {item.time}</Text>
+              <Text style={styles.logText}>{item.notes}</Text>
+            </View>
+          )}
+          ListEmptyComponent={<Text style={styles.emptyListText}>No hay citas registradas.</Text>}
+        />
+      </ThemedView>
+    </ScrollView>
   );
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
   },
   scrollViewContent: {
-    paddingBottom: 20,
+    padding: 16,
+    paddingBottom: 32,
   },
   section: {
-    marginBottom: 20,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-    shadowColor: isDarkMode ? '#000' : '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginVertical: 8,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 16,
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
   fetalImage: {
     width: '100%',
-    height: 200,
-    resizeMode: 'contain',
-    marginBottom: 10,
+    height: 250,
     borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: '#ccc',
+    resizeMode: 'contain',
   },
   weekText: {
-    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
   input: {
-    height: 40,
-    borderColor: isDarkMode ? '#555' : '#ddd',
+    width: '100%',
+    height: 50,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    color: isDarkMode ? Colors.dark.text : Colors.light.text,
-    backgroundColor: isDarkMode ? '#333' : '#fff',
+    borderColor: isDarkMode ? '#555' : '#E8EAF6',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    color: isDarkMode ? '#FFFFFF' : '#333333',
+    backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
-    paddingTop: 10,
+    paddingTop: 15,
   },
   button: {
-    backgroundColor: isDarkMode ? Colors.dark.tint : Colors.light.tint,
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#BB86FC' : '#5C6BC0',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
     marginBottom: 15,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   listTitle: {
     fontSize: 18,
@@ -375,16 +386,30 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
   listItem: {
-    padding: 10,
-    borderBottomColor: isDarkMode ? '#444' : '#eee',
-    borderBottomWidth: 1,
-    backgroundColor: isDarkMode ? Colors.dark.cardBackground : Colors.light.cardBackground,
-    borderRadius: 5,
-    marginBottom: 5,
+    backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#444' : '#E0E0E0',
+  },
+  logText: {
+    fontSize: 14,
+    color: isDarkMode ? '#E0E0E0' : '#424242',
+  },
+  logTextDate: {
+    fontSize: 12,
+    color: isDarkMode ? '#aaa' : '#777',
+    marginTop: 4,
+  },
+  logTextBold: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: isDarkMode ? '#FFFFFF' : '#212121',
   },
   emptyListText: {
     textAlign: 'center',
     marginTop: 20,
-    color: isDarkMode ? Colors.dark.text : Colors.light.text,
+    color: isDarkMode ? '#aaa' : '#777',
   },
 });

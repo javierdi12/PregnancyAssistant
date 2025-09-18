@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -21,7 +22,7 @@ export default function PrivacyScreen() {
   const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const router = useRouter();
-  const colorScheme = useColorScheme(); 
+  const colorScheme = useColorScheme();
 
   const isDark = colorScheme === 'dark';
 
@@ -35,7 +36,7 @@ export default function PrivacyScreen() {
     setPersonalizedAdsAccepted(true);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!dataUsageAccepted) {
       Alert.alert(
         'Atención',
@@ -45,10 +46,22 @@ export default function PrivacyScreen() {
       return;
     }
 
-    router.replace({
-      pathname: '/welcome',
-      params: { fromPrivacy: 'true', timestamp: Date.now() },
-    });
+    try {
+      // Save that terms were accepted in AsyncStorage
+      await AsyncStorage.setItem('terms_accepted', 'true');
+      await AsyncStorage.setItem(
+        'ads_accepted',
+        personalizedAdsAccepted ? 'true' : 'false'
+      );
+
+      // Redirect to home (tabs)
+      router.replace({
+        pathname: '/(tabs)',
+        params: { fromPrivacy: 'true', timestamp: Date.now() },
+      });
+    } catch (error) {
+      console.error('Error guardando términos:', error);
+    }
   };
 
   return (
@@ -81,9 +94,7 @@ export default function PrivacyScreen() {
         </View>
 
         {/* Title */}
-        <ThemedText style={styles.title}>
-          Hablemos de privacidad
-        </ThemedText>
+        <ThemedText style={styles.title}>Hablemos de privacidad</ThemedText>
 
         {/* Privacy Options */}
         <View style={styles.optionsContainer}>
@@ -177,10 +188,11 @@ export default function PrivacyScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <ThemedText style={styles.continueText}>
-              Continuar
-            </ThemedText>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleContinue}
+          >
+            <ThemedText style={styles.continueText}>Continuar</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -214,7 +226,7 @@ export default function PrivacyScreen() {
         </View>
       </Modal>
 
-      {/* Home Indicator (solo para iOS) */}
+      {/* Home Indicator  */}
       {Platform.OS === 'ios' && (
         <ThemedView style={styles.homeIndicator}>
           <View
@@ -234,7 +246,12 @@ const styles = StyleSheet.create({
   header: { padding: 16, borderBottomWidth: 1 },
   backButton: { flexDirection: 'row', alignItems: 'center', marginTop: 20 },
   backText: { fontWeight: '500', marginLeft: 8, fontSize: 16 },
-  scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 50, justifyContent: 'center' },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 24,
+    paddingBottom: 50,
+    justifyContent: 'center',
+  },
   iconContainer: { alignItems: 'center', marginBottom: 90 },
   iconCircle: {
     width: 128,
@@ -251,22 +268,58 @@ const styles = StyleSheet.create({
     left: '50%',
     transform: [{ translateX: -12 }],
   },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 32, lineHeight: 32 },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 32,
+  },
   optionsContainer: { gap: 24, marginBottom: 32 },
   optionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   optionTextContainer: { flex: 1 },
   optionText: { fontSize: 16, lineHeight: 24 },
   highlightText: { color: '#06B6D4', fontWeight: '500' },
-  privacyText: { fontSize: 14, textAlign: 'center', marginBottom: 110, lineHeight: 20 },
-  privacyLink: { color: '#06B6D4', fontWeight: '500', textDecorationLine: 'underline' },
+  privacyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 110,
+    lineHeight: 20,
+  },
+  privacyLink: {
+    color: '#06B6D4',
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
   buttonsContainer: { gap: 16 },
   buttonRow: { flexDirection: 'row', gap: 12 },
-  button: { flex: 1, padding: 11, borderRadius: 12, alignItems: 'center', justifyContent: 'center', minHeight: 50 },
-  necessaryButton: { backgroundColor: '#cffafe', borderWidth: 1, borderColor: '#a5f3fc' },
+  button: {
+    flex: 1,
+    padding: 11,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  necessaryButton: {
+    backgroundColor: '#cffafe',
+    borderWidth: 1,
+    borderColor: '#a5f3fc',
+  },
   allButton: { backgroundColor: '#06B6D4' },
-  necessaryButtonText: { color: '#0891b2', fontWeight: '600', fontSize: 14 },
+  necessaryButtonText: {
+    color: '#0891b2',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   allButtonText: { color: '#ffffff', fontWeight: '600', fontSize: 14 },
-  continueButton: { padding: 20, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  continueButton: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
   continueText: { fontWeight: '500', fontSize: 14 },
   homeIndicator: { padding: 16, alignItems: 'center', justifyContent: 'center' },
   homeIndicatorBar: { width: 128, height: 4, borderRadius: 2 },
@@ -279,8 +332,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  modalContent: { borderRadius: 12, padding: 20, width: '100%', maxHeight: '80%' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+  modalContent: {
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   modalText: { fontSize: 14, lineHeight: 20, marginBottom: 20 },
   closeButton: {
     backgroundColor: '#06B6D4',
