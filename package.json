@@ -17,15 +17,9 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.17",
     "expo": "~53.0.22",
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
     "expo-application": "~5.0.0",
     "expo-auth-session": "^7.0.8",
-=======
->>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
->>>>>>> Stashed changes
-    "expo-blur": "~14.1.5",
+    "expo-blur": "14.1.5",
     "expo-constants": "~17.1.7",
     "expo-crypto": "~14.1.5",
     "expo-dev-client": "~5.2.4",
@@ -56,18 +50,7 @@
     "react-native-svg": "15.11.2",
     "react-native-switch": "^1.5.1",
     "react-native-web": "~0.20.0",
-<<<<<<< HEAD
     "react-native-webview": "13.13.5"
-=======
-    "react-native-webview": "13.13.5",
-
-    "react-navigation": "^5.0.0",
-    "expo-auth-session": "~6.2.1"
-
-<<<<<<< Updated upstream
-=======
->>>>>>> ada5de236c386a75f6f178c0f6f084a3c9c6b224
->>>>>>> Stashed changes
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
