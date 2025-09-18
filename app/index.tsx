@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
@@ -23,7 +24,7 @@ import { auth } from '../FireBase';
 
 const FACEBOOK_APP_ID = '1892374498008258';
 
-// Definir tipos para los intervalos (solución para React Native/TypeScript)
+// Definir tipos para los intervalos
 type IntervalHandle = ReturnType<typeof setInterval>;
 type TimeoutHandle = ReturnType<typeof setTimeout>;
 
@@ -39,13 +40,30 @@ export default function LoginScreen() {
   const intervalRef = useRef<IntervalHandle | null>(null);
   const timeoutRef = useRef<TimeoutHandle | null>(null);
 
-  // If the user is ALREADY logged in, send them directly to tabs
+  // Función para verificar si aceptó términos
+  const checkTermsAccepted = async (): Promise<boolean> => {
+    try {
+      const termsAccepted = await AsyncStorage.getItem('terms_accepted');
+      return termsAccepted === 'true';
+    } catch (error) {
+      console.error('Error checking terms:', error);
+      return false;
+    }
+  };
+
+  // Redirección basada en estado de login y términos
   useEffect(() => {
     isMountedRef.current = true;
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        
+        if (termsAccepted) {
+          router.replace('/(tabs)'); // → Va a tabs si aceptó términos
+        } else {
+          router.replace('/privacy'); // → Va a privacy si no aceptó
+        }
       }
     });
 
@@ -74,7 +92,12 @@ export default function LoginScreen() {
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
     } catch (err) {
       const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
@@ -89,7 +112,12 @@ export default function LoginScreen() {
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
     } catch (err) {
       const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
@@ -106,11 +134,9 @@ export default function LoginScreen() {
   const handleFacebookSignIn = async () => {
     safeSetIsLoading(true);
     try {
-      // INTENTAR LOGIN EN TODAS LAS PLATAFORMAS
       if (Platform.OS === 'web') {
         await handleFacebookWebLogin();
       } else {
-        // En iOS/Android, mostrar mensaje y redirigir a login web
         Alert.alert(
           'Login con Facebook',
           'Para iOS y Android, necesitamos redirigirte al navegador para completar el login. ¿Quieres continuar?',
@@ -135,17 +161,13 @@ export default function LoginScreen() {
   };
 
   const handleFacebookMobileRedirect = () => {
-    // Redirigir a la URL de Facebook para login en móvil
     const redirectUri = `https://${window.location.hostname || 'localhost'}`;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
-    
-    // Abrir en el navegador
     window.location.href = authUrl;
   };
 
   const handleFacebookWebLogin = async () => {
     const redirectUri = window.location.origin;
-    
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
     
     const width = 600;
@@ -168,11 +190,9 @@ export default function LoginScreen() {
     popupRef.current = popup;
     let popupClosed = false;
     
-    // Limpiar intervalos previos
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     
-    // SOLUCIÓN: Usar el tipo correcto para setInterval
     intervalRef.current = setInterval(() => {
       try {
         if (!isMountedRef.current) {
@@ -215,12 +235,10 @@ export default function LoginScreen() {
           popup.close();
         }
       } catch (intervalError) {
-        console.error('Interval error:', intervalError); // Explicitly use intervalError
-        // Error cross-origin normal, continuar verificando
+        console.error('Interval error:', intervalError);
       }
     }, 100) as unknown as IntervalHandle;
     
-    // SOLUCIÓN: Usar el tipo correcto para setTimeout
     timeoutRef.current = setTimeout(() => {
       if (!popupClosed && isMountedRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -259,8 +277,12 @@ export default function LoginScreen() {
       const userCredential = await signInWithCredential(auth, credential);
       
       if (userCredential.user && isMountedRef.current) {
-        console.log("Usuario autenticado:", userCredential.user.email);
-        router.replace('/privacy');
+        const termsAccepted = await checkTermsAccepted();
+        if (termsAccepted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/privacy');
+        }
       }
     } catch (err: any) {
       console.error('Error en autenticación:', err);
