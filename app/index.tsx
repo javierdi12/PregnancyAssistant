@@ -1,7 +1,7 @@
 import * as Google from "expo-auth-session/providers/google";
 import { router } from 'expo-router';
 import * as WebBrowser from "expo-web-browser";
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithCredential, signInWithEmailAndPassword } from 'firebase/auth';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential, signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, SafeAreaView, StyleSheet, Text, TextInput,
@@ -16,7 +16,7 @@ export default function LoginScreen() {
     clientId: "265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com",
     androidClientId: "265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com",
     //redirectUri: makeRedirectUri({
-      //scheme: "pregnancyassistant",
+    //scheme: "pregnancyassistant",
     //}),
   });
 
@@ -62,30 +62,66 @@ export default function LoginScreen() {
   };
 
   const signIn = async () => {
+    if (!email || !password) {
+      Alert.alert('Campos requeridos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
     try {
       setIsLoading(true);
       const user = await signInWithEmailAndPassword(auth, email, password);
       if (user) router.replace('/privacy');
     } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
-      Alert.alert('Error', 'Error al iniciar sesión: ' + errorMsg);
+      console.log('Error crudo recibido en signIn:', JSON.stringify(error));
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   const signUp = async () => {
+    if (!email || !password) {
+      Alert.alert('Campos requeridos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
     try {
       setIsLoading(true);
       const user = await createUserWithEmailAndPassword(auth, email, password);
       if (user) router.replace('/privacy');
     } catch (error) {
-      const errorMsg = error && typeof error === 'object' && 'message' in error ? error.message : String(error);
-      Alert.alert('Error', 'Error al crear cuenta: ' + errorMsg);
+      console.log('Error crudo recibido en signUp:', JSON.stringify(error));
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const resetPassword = async () => {
+    if (!email) {
+      Alert.alert("Campo requerido", "Por favor, ingresa tu correo para restablecer la contraseña.");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert("Correo enviado", "Revisa tu bandeja de entrada y sigue las instrucciones para restablecer tu contraseña.");
+    } catch (error: any) {
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const handleFacebookSignIn = () => {
     Alert.alert('Facebook Sign-In', 'Esta funcionalidad requiere configuración adicional');
@@ -182,6 +218,12 @@ export default function LoginScreen() {
               <Text style={styles.authButtonText}>Crear cuenta</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity onPress={resetPassword}>
+              <Text style={[styles.cancelText, { textAlign: 'center', marginBottom: 12 }]}>
+                ¿Olvidaste tu contraseña?
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={cancelEmailAuth}>
               <Text style={styles.cancelText}>Volver atrás</Text>
             </TouchableOpacity>
@@ -191,8 +233,46 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+function isValidEmail(email: string): boolean {
+  
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-// --- Estilos
+function getFirebaseErrorMessage(error: any): string {
+  // Itry to get code directly
+  let code = error?.code;
+
+  //obtain code from customData if not present
+  if (!code && error?.customData?._tokenResponse?.error?.message) {
+    const apiMsg = error.customData._tokenResponse.error.message;
+    // mapping 
+    if (apiMsg === "EMAIL_EXISTS") code = "auth/email-already-in-use";
+    if (apiMsg === "EMAIL_NOT_FOUND") code = "auth/user-not-found";
+    if (apiMsg === "INVALID_PASSWORD") code = "auth/wrong-password";
+    if (apiMsg === "WEAK_PASSWORD") code = "auth/weak-password";
+
+  }
+
+  // amigable message
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return "El correo ya está registrado. Intenta iniciar sesión o usa otro correo.";
+    case 'auth/weak-password':
+      return "La contraseña es muy débil. Usa al menos 6 caracteres.";
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return "Correo o contraseña incorrectos. Intenta de nuevo.";
+    case 'auth/invalid-email':
+      return "El formato del correo es inválido.";
+    default:
+      return "Ocurrió un error inesperado: " + (error?.message ?? "Desconocido");
+  }
+}
+
+
+
+// --- styles ---
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,

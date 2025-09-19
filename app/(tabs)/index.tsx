@@ -11,7 +11,7 @@ import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-nativ
 import { auth } from '../../FireBase';
 
 export default function HomeScreen() {
-  
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) router.replace('/');
@@ -22,7 +22,10 @@ export default function HomeScreen() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.replace('/');
+      setTimeout(() => {
+        router.replace('/');
+      }, 200);
+
     } catch (error) {
       Alert.alert('Error', 'Error al cerrar sesión: ' + String(error));
     }
