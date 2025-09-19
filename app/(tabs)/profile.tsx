@@ -1,36 +1,36 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to store data locally on the device
+import DateTimePicker from '@react-native-community/datetimepicker'; // Import AsyncStorage to store data locally on the device
+import * as Location from 'expo-location'; // Import Expo location functions
 import { router } from 'expo-router';
-import { getAuth } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import Firebase authentication functions
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import functions to access Firestore
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useColorScheme,
-    View,
+  Alert,
+  Platform,
+  ScrollView, // For scrollable content
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { db } from '../../FireBase';
+import { db } from '../../FireBase'; // Import the reference to the Firestore database
 
-interface Ubicacion {
+interface Ubicacion { // Defines the interface for the location
   provincia: string;
   canton: string;
   distrito: string;
   calle?: string;
 }
 
-const ProfileForm = () => {
+const ProfileForm = () => { // Main component of the profile form
   const colorScheme = useColorScheme() ?? 'light';
   const styles = getStyles(colorScheme);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ // Status for saving form data
     nombre: '',
     apellidos: '',
     fechaNacimiento: '',
@@ -42,7 +42,7 @@ const ProfileForm = () => {
   const [saving, setSaving] = useState(false);
   const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
 
-  const auth = getAuth();
+  const auth = getAuth();  // Gets the currently authenticated user
   const user = auth.currentUser;
 
   // Calculate age
@@ -61,7 +61,7 @@ const ProfileForm = () => {
     }
   }, [formData.fechaNacimiento]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string) => { // Function to format the date
     if (!dateString) return '';
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -73,13 +73,15 @@ const ProfileForm = () => {
   // Get location
   const getCurrentLocation = async () => {
     try {
+       // Request permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permiso denegado', 'No se pudo acceder a la ubicación');
         return;
       }
+       // Obtains coordinates
       const loc = await Location.getCurrentPositionAsync({});
-      const address = await Location.reverseGeocodeAsync(loc.coords);
+      const address = await Location.reverseGeocodeAsync(loc.coords);// Convert coordinates to address
 
       if (address.length > 0) {
         const addr = address[0];
@@ -124,12 +126,14 @@ const ProfileForm = () => {
           }
         }
 
+        // Sets the form data
         setFormData({
           nombre: userData.nombre || '',
           apellidos: userData.apellidos || '',
           fechaNacimiento,
         });
 
+        // If location is available, use it; if not, obtain it
         if (userData.ubicacion) {
           setUbicacion(userData.ubicacion);
         } else {
@@ -157,23 +161,44 @@ const ProfileForm = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
+  const handleDateChange = (event: any, selectedDate?: Date) => { // Handles changes to the selected date
+    setShowDatePicker(Platform.OS === 'ios'); // iOS keeps the picker visible
     if (selectedDate) {
       handleInputChange('fechaNacimiento', selectedDate.toISOString().split('T')[0]);
     }
   };
 
+
+ // Function to save the profile in Firestore
   const handleSave = async () => {
     if (!user) {
       Alert.alert('Error', 'Debes iniciar sesión para guardar tu perfil');
       return;
     }
-    setSaving(true);
+
+    // Validate required fields
+  if (!formData.nombre.trim() || !formData.apellidos.trim() || !formData.fechaNacimiento.trim()) {
+    Alert.alert('Campos incompletos', 'Debes llenar todos los campos: Nombre, Apellidos y Fecha de nacimiento');
+    return;
+  }
+
+  // Validate that first and last names do not contain numbers
+  const nombreConNumeros = /\d/.test(formData.nombre);
+  const apellidosConNumeros = /\d/.test(formData.apellidos);
+
+  if (nombreConNumeros || apellidosConNumeros) {
+    Alert.alert(
+      'Datos inválidos',
+      'Los campos Nombre y Apellidos no pueden contener números'
+    );
+    return;
+  }
+
+    setSaving(true); // Indicate that it is saving
     try {
       await setDoc(
         doc(db, 'users', user.uid),
-        { ...formData, edad, ubicacion, lastUpdated: new Date() },
+        { ...formData, edad, ubicacion, lastUpdated: new Date() }, // Data to save
         { merge: true }
       );
       await AsyncStorage.setItem('profile_completed', 'true');
@@ -206,18 +231,18 @@ const ProfileForm = () => {
         </View>
 
         <View style={styles.formSection}>
-          {/* Nombre */}
+          {/* name */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Nombre:</Text>
             <TextInput
               style={styles.input}
               value={formData.nombre}
               onChangeText={(value) => handleInputChange('nombre', value)}
-              placeholder="José"
+              placeholder="Escribe aqui.."
             />
           </View>
 
-          {/* Apellidos */}
+          {/* lastname */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Apellidos:</Text>
             <TextInput
@@ -228,7 +253,7 @@ const ProfileForm = () => {
             />
           </View>
 
-          {/* Fecha de nacimiento */}
+          {/* date of birth */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Fecha de nacimiento:</Text>
             <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
@@ -247,13 +272,13 @@ const ProfileForm = () => {
             )}
           </View>
 
-          {/* Edad */}
+          {/* Age */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Edad:</Text>
             <Text style={styles.ageText}>{edad !== null ? edad : ''}</Text>
           </View>
 
-          {/* Ubicación */}
+          {/* Location */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Ubicación:</Text>
             <Text style={styles.ageText}>
@@ -264,7 +289,7 @@ const ProfileForm = () => {
                     ubicacion.distrito,
                     ubicacion.calle && ubicacion.calle !== ubicacion.distrito ? ubicacion.calle : null
                   ]
-                    .filter(Boolean) // eliminar valores vacíos
+                    .filter(Boolean) // // Remove empty values
                     .join(', ')
                 : 'No disponible'}
             </Text>
@@ -274,7 +299,7 @@ const ProfileForm = () => {
         {/* Divider */}
         <View style={styles.divider} />
 
-        {/* Sección Ayuda */}
+        {/* Help section */}
         <View style={styles.helpSection}>
           <Text style={styles.helpTitle}>Ayuda</Text>
 
@@ -289,7 +314,7 @@ const ProfileForm = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Guardar */}
+        {/* Save */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveButtonText}>{saving ? 'Guardando...' : 'Guardar cambios'}</Text>
         </TouchableOpacity>
@@ -298,7 +323,7 @@ const ProfileForm = () => {
   );
 };
 
-const getStyles = (theme: 'light' | 'dark') =>
+const getStyles = (theme: 'light' | 'dark') => // Function to define dynamic styles according to the theme
   StyleSheet.create({
     container: { flex: 1, backgroundColor: theme === 'dark' ? '#121212' : '#fff' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

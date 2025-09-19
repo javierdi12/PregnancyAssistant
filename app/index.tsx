@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to store data locally
 import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
@@ -6,7 +6,7 @@ import {
   signInWithCredential,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react'; // Import React and necessary hooks
 import {
   ActivityIndicator,
   Alert,
@@ -20,9 +20,9 @@ import {
   View,
   useColorScheme
 } from 'react-native';
-import { auth } from '../FireBase';
+import { auth } from '../FireBase'; // Import Firebase authentication instance
 
-const FACEBOOK_APP_ID = '1892374498008258';
+const FACEBOOK_APP_ID = '1892374498008258'; // Facebook app ID
 
 // Definir tipos para los intervalos
 type IntervalHandle = ReturnType<typeof setInterval>;
@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAuth, setActiveAuth] = useState<'none' | 'email' | 'google' | 'facebook'>('none');
+  const [activeAuth, setActiveAuth] = useState<'none' | 'email' | 'google' | 'facebook'>('none'); // Status for active authentication type
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const isMountedRef = useRef(true);
@@ -40,7 +40,7 @@ export default function LoginScreen() {
   const intervalRef = useRef<IntervalHandle | null>(null);
   const timeoutRef = useRef<TimeoutHandle | null>(null);
 
-  // Función para verificar si aceptó términos
+ // Function to verify if the user accepted terms
   const checkTermsAccepted = async (): Promise<boolean> => {
     try {
       const termsAccepted = await AsyncStorage.getItem('terms_accepted');
@@ -51,18 +51,18 @@ export default function LoginScreen() {
     }
   };
 
-  // Redirección basada en estado de login y términos
+  // Effect that handles redirection based on login and acceptance of terms
   useEffect(() => {
     isMountedRef.current = true;
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {  // Listens for changes in authentication status
       if (user && isMountedRef.current) {
         const termsAccepted = await checkTermsAccepted();
         
         if (termsAccepted) {
-          router.replace('/(tabs)'); // → Va a tabs si aceptó términos
+          router.replace('/(tabs)'); 
         } else {
-          router.replace('/privacy'); // → Va a privacy si no aceptó
+          router.replace('/privacy'); 
         }
       }
     });
@@ -71,7 +71,7 @@ export default function LoginScreen() {
       isMountedRef.current = false;
       unsubscribe();
       
-      // Limpiar intervalos y timeouts
+      // Clear intervals and timeouts
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (popupRef.current && !popupRef.current.closed) {
@@ -87,7 +87,7 @@ export default function LoginScreen() {
     }
   };
 
-  const signIn = async () => {
+  const signIn = async () => { // Function to log in with email and password
     safeSetIsLoading(true);
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
@@ -107,7 +107,7 @@ export default function LoginScreen() {
     }
   };
 
-  const signUp = async () => {
+  const signUp = async () => { // Function to create account with email and password
     safeSetIsLoading(true);
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
@@ -138,6 +138,7 @@ export default function LoginScreen() {
         await handleFacebookWebLogin();
       } else {
         Alert.alert(
+          // Mobile login via redirection
           'Login con Facebook',
           'Para iOS y Android, necesitamos redirigirte al navegador para completar el login. ¿Quieres continuar?',
           [
@@ -160,13 +161,13 @@ export default function LoginScreen() {
     }
   };
 
-  const handleFacebookMobileRedirect = () => {
+  const handleFacebookMobileRedirect = () => {  // Function to redirect to Facebook OAuth on mobile
     const redirectUri = `https://${window.location.hostname || 'localhost'}`;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
     window.location.href = authUrl;
   };
 
-  const handleFacebookWebLogin = async () => {
+  const handleFacebookWebLogin = async () => {  // Function to log in with Facebook on the web using a popup
     const redirectUri = window.location.origin;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
     
@@ -193,7 +194,7 @@ export default function LoginScreen() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     
-    intervalRef.current = setInterval(() => {
+    intervalRef.current = setInterval(() => {  // Interval to check if popup closed or has token
       try {
         if (!isMountedRef.current) {
           if (intervalRef.current) clearInterval(intervalRef.current);
@@ -239,7 +240,7 @@ export default function LoginScreen() {
       }
     }, 100) as unknown as IntervalHandle;
     
-    timeoutRef.current = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {  // Timeout to close popup if too much time passes
       if (!popupClosed && isMountedRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (popup && !popup.closed) {
@@ -251,7 +252,7 @@ export default function LoginScreen() {
     }, 120000) as unknown as TimeoutHandle;
   };
 
-  const fetchFacebookUserInfo = async (accessToken: string) => {
+  const fetchFacebookUserInfo = async (accessToken: string) => {   // Function to obtain Facebook user information
     try {
       const response = await fetch(
         `https://graph.facebook.com/v17.0/me?fields=id,name,email&access_token=${accessToken}`
@@ -263,7 +264,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleFacebookToken = async (token: string) => {
+  const handleFacebookToken = async (token: string) => { // Function to manage Facebook token and authentication with Firebase
     try {
       const userInfo = await fetchFacebookUserInfo(token);
       

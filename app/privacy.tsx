@@ -1,43 +1,43 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to store persistent data
+import { useRouter } from 'expo-router'; // Hook for navigating between screens with Expo Router
 import { useState } from 'react';
 import {
   Alert,
   Modal,
-  Platform,
+  Platform, // Allows detection of iOS or Android
   ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
-  useColorScheme,
+  useColorScheme, // Hook to detect light or dark theme
 } from 'react-native';
 import { Switch } from 'react-native-switch';
 
 export default function PrivacyScreen() {
-  const [dataUsageAccepted, setDataUsageAccepted] = useState(false);
-  const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false);
+  const [dataUsageAccepted, setDataUsageAccepted] = useState(false);// Status to determine whether the user accepted the use of essential data
+  const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false); // Status to determine whether the user accepted personalized advertising
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme();  // Detects whether the system is in dark or light mode
 
   const isDark = colorScheme === 'dark';
 
-  const handleAcceptNecessary = () => {
+  const handleAcceptNecessary = () => {  // Function that accepts only necessary data (no optional advertising)
     setDataUsageAccepted(true);
     setPersonalizedAdsAccepted(false);
   };
 
-  const handleAcceptAll = () => {
+  const handleAcceptAll = () => {  // Function that accepts all data, including optional advertising
     setDataUsageAccepted(true);
     setPersonalizedAdsAccepted(true);
   };
 
-  const handleContinue = async () => {
-    if (!dataUsageAccepted) {
+  const handleContinue = async () => { //Function that runs when Continue is pressed.
+    if (!dataUsageAccepted) {// Validates that the essential data has been accepted; if not, displays an alert.
       Alert.alert(
         'Atención',
         'Debes aceptar el uso de datos esenciales para continuar',
@@ -187,9 +187,21 @@ export default function PrivacyScreen() {
             <ThemedText style={styles.modalTitle}>Política de Privacidad</ThemedText>
             <ScrollView>
               <ThemedText style={styles.modalText}>
-                Aquí van los términos y condiciones de privacidad. Explica cómo se
-                manejan los datos, seguridad, uso de información, etc.
-              </ThemedText>
+                1. Recopilación de datos{"\n"}
+                Recopilamos únicamente los datos necesarios para brindarte nuestros servicios, como información sobre tu estado de embarazo, preferencias y uso de la aplicación. No compartimos tus datos con terceros sin tu consentimiento.
+                {"\n"}
+                2. Uso de la información{"\n"}
+                La información recopilada se utiliza exclusivamente para mejorar la experiencia dentro de la aplicación, ofrecer contenidos personalizados y enviarte notificaciones relevantes. La publicidad personalizada es opcional y puedes activarla o desactivarla en cualquier momento.
+                {"\n"}
+                3. Seguridad de los datos{"\n"}
+                Todos los datos sensibles se almacenan de manera segura.
+                {"\n"}
+                4. Acceso y control{"\n"}
+                Tienes derecho a acceder, corregir tus datos personales en cualquier momento. Puedes hacerlo desde la configuración de tu cuenta.
+                {"\n"}
+                5. Actualizaciones de la política{"\n"}
+                Podemos actualizar esta política para mejorar la seguridad o cumplir con nuevas regulaciones. Te notificaremos sobre cambios importantes y siempre tendrás acceso a la versión actualizada dentro de la aplicación.
+          </ThemedText>
             </ScrollView>
             <TouchableOpacity
               style={styles.closeButton}

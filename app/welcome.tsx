@@ -1,29 +1,29 @@
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText'; // Import light/dark theme text component
+import { ThemedView } from '@/components/ThemedView'; // Import light/dark theme view
 import { useNavigation, useRouter } from 'expo-router';
 import { useLayoutEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 export default function WelcomeScreen() {
-  const router = useRouter();// Hook for route-based navigation in Expo Router
+  const router = useRouter();
   const navigation = useNavigation();
   const [showMessage, setShowMessage] = useState(false);
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
+  const colorScheme = useColorScheme();  // Detects the system theme (‘light’ | ‘dark’)
+  const isDarkMode = colorScheme === 'dark'; // Boolean helper to determine if it is in dark mode
 
   useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
+    navigation.setOptions({ headerShown: false });// Hide the header 
   }, [navigation]);
 
-  const handleGetStarted = () => {
-    setShowMessage(true);
-    setTimeout(() => {
+  const handleGetStarted = () => { // Function called when pressing the “Next” button
+    setShowMessage(true);// Display the overlay with a motivational message
+    setTimeout(() => { 
       setShowMessage(false);
       router.replace('/(tabs)');
     }, 2000);
   };
 
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode);  // Generate dynamic styles if in dark mode
 
   return (
     <View style={styles.container}>
@@ -58,14 +58,14 @@ export default function WelcomeScreen() {
   );
 }
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({ // Function that returns styles according to theme
   container: { 
     flex: 1, 
-    backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
+    backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',// Dark or light background
   },
   scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'flex-start',
+    flexGrow: 1, // Allows content to grow and scroll
+    justifyContent: 'flex-start', // Content aligned vertically at the top
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingTop: 100,
@@ -82,8 +82,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   welcomeText: {
     fontSize: 24, 
     fontWeight: 'bold', 
-    marginBottom: 40, 
-    color: isDarkMode ? '#FFFFFF' : '#1A237E',
+    marginBottom: 40, // Bottom spacing
+    color: isDarkMode ? '#FFFFFF' : '#1A237E',// Dynamic color according to theme
     textAlign: 'center',
     lineHeight: 32,
   },
@@ -102,17 +102,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontWeight: '600'
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject, // Fills the entire screen
+    ...StyleSheet.absoluteFillObject, //  Fills the entire screen
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: isDarkMode ? '#000000' : '#FFFFFF', // Solid background according to theme
+    backgroundColor: isDarkMode ? '#000000' : '#FFFFFF', //  Solid background according to theme
   },
   overlayText: {
     fontSize: 22,
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 30,
-    color: isDarkMode ? '#FFFFFF' : '#000000', //  Contrasting text
+    color: isDarkMode ? '#FFFFFF' : '#000000', // Contrasting text
     padding: 20,
   },
 });
