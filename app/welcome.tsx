@@ -5,7 +5,7 @@ import { useLayoutEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 export default function WelcomeScreen() {
-  const router = useRouter();
+  const router = useRouter();// Hook for route-based navigation in Expo Router
   const navigation = useNavigation();
   const [showMessage, setShowMessage] = useState(false);
   const colorScheme = useColorScheme();
@@ -102,17 +102,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontWeight: '600'
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject, // ← Fills the entire screen
+    ...StyleSheet.absoluteFillObject, // Fills the entire screen
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: isDarkMode ? '#000000' : '#FFFFFF', // ← Solid background according to theme
+    backgroundColor: isDarkMode ? '#000000' : '#FFFFFF', // Solid background according to theme
   },
   overlayText: {
     fontSize: 22,
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 30,
-    color: isDarkMode ? '#FFFFFF' : '#000000', // ← Contrasting text
+    color: isDarkMode ? '#FFFFFF' : '#000000', //  Contrasting text
     padding: 20,
   },
 });
