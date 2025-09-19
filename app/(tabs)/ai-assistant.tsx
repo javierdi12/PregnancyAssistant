@@ -5,9 +5,9 @@ import { Colors } from '@/constants/Colors';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
-// NOTE: For testing purposes only. In a real application, NEVER expose API keys in client-side code.
-// This API key should be stored securely (e.g., in environment variables or a backend service).
-const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; // REPLACE WITH YOUR ACTUAL GEMINI API KEY
+
+// The api
+const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; 
 
 
 export default function AIAssistantScreen() {
@@ -48,10 +48,7 @@ const handleAskAI = async () => {
     return;
   }
   
-  if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE' || !GEMINI_API_KEY) {
-    Alert.alert('Error de Configuración', 'Por favor, reemplaza \'YOUR_GEMINI_API_KEY_HERE\' con tu clave API de Gemini real.');
-    return;
-  }
+ 
 
   setAskingAI(true);
   setAiResponse(null);
