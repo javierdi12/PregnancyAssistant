@@ -26,15 +26,6 @@
     },
     "plugins": [
       "expo-router",
-        "expo-auth-session",
-        "expo-application",
-        
-      [
-        
-        {
-          "origin": "https://auth.expo.io"
-        }
-      ],
       [
         "expo-splash-screen",
         {
@@ -45,10 +36,16 @@
         }
       ],
       "expo-web-browser",
-      "react-native-edge-to-edge"
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6a27f78a-ee17-4d8c-8de2-648953d10eff"
+      }
     }
   }
 }

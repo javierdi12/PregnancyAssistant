@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { useEffect } from 'react';
 import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { auth } from '../../Firebase';
+import { auth } from '../../FireBase';
 
 export default function HomeScreen() {
   

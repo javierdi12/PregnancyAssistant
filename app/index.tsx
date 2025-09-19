@@ -1,17 +1,13 @@
-import { makeRedirectUri } from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import { router } from 'expo-router';
 import * as WebBrowser from "expo-web-browser";
-import {
-  GoogleAuthProvider, createUserWithEmailAndPassword, signInWithCredential,
-  signInWithEmailAndPassword
-} from 'firebase/auth';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithCredential, signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, SafeAreaView, StyleSheet, Text, TextInput,
   TouchableOpacity, View, useColorScheme
 } from 'react-native';
-import { auth } from '../Firebase';
+import { auth } from '../FireBase';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -19,15 +15,16 @@ export default function LoginScreen() {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: "265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com",
     androidClientId: "265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com",
-    redirectUri: makeRedirectUri({
-      scheme: "pregnancyassistant",
-    }),
+    //redirectUri: makeRedirectUri({
+      //scheme: "pregnancyassistant",
+    //}),
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
       const credential = GoogleAuthProvider.credential(id_token);
+      console.log('OAuth response:', response);
 
       signInWithCredential(auth, credential)
         .catch((error: { code?: string; message?: string }) => {
@@ -42,6 +39,7 @@ export default function LoginScreen() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
+        console.log(JSON.stringify(user));
         router.replace('/privacy');
       }
     });
