@@ -279,6 +279,16 @@ export default function TrackingScreen() {
       return require('../../assets/images/fetus/placeholder.png');
     }
 
+    if (week >= 18 && week <= 25) {
+      return require('../../assets/images/fetus/semana_25.png');
+    }
+    if (week >= 26 && week <= 35) {
+      return require('../../assets/images/fetus/semana_35.png');
+    }
+    if (week >= 36 && week <= 39) {
+      return require('../../assets/images/fetus/semana_39.png');
+    }
+
     switch (week) {
       case 1:
         return require('../../assets/images/fetus/semana_1.png');
@@ -288,14 +298,30 @@ export default function TrackingScreen() {
         return require('../../assets/images/fetus/semana_3.png');
       case 4:
         return require('../../assets/images/fetus/semana_4.png');
-      // TODO: For each image you add to the 'fetus' folder, add a case here.
-      /*
       case 5:
         return require('../../assets/images/fetus/semana_5.png');
       case 6:
         return require('../../assets/images/fetus/semana_6.png');
-      */
-      
+      case 7:
+        return require('../../assets/images/fetus/semana_7.png');
+      case 9:
+        return require('../../assets/images/fetus/semana_9.png');
+      case 10:
+        return require('../../assets/images/fetus/semana_10.png');
+      case 11:
+        return require('../../assets/images/fetus/semana_11.png');
+      case 12:
+        return require('../../assets/images/fetus/semana_12.png');
+      case 13:
+        return require('../../assets/images/fetus/semana_13.png');
+      case 14:
+        return require('../../assets/images/fetus/semana_14.png');
+      case 15:
+        return require('../../assets/images/fetus/semana_15.png');
+      case 16:
+        return require('../../assets/images/fetus/semana_16.png');
+      case 17:
+        return require('../../assets/images/fetus/semana_17.png');
       default:
         return require('../../assets/images/fetus/placeholder.png');
     }
