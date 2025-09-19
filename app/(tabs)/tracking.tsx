@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  FlatList,
   ScrollView,
   Text,
   View,
   useColorScheme,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -25,6 +26,9 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
+  doc,
+  getDoc,
+  setDoc,
 } from 'firebase/firestore';
 
 // Interfaces for data structures
@@ -56,8 +60,13 @@ export default function TrackingScreen() {
   const isDarkMode = colorScheme === 'dark';
   const styles = getStyles(isDarkMode);
 
+  // Auth state
+  const [userId, setUserId] = useState<string | null>(null);
+
   // State for Fetal Development
-  const [currentWeek, setCurrentWeek] = useState<number>(10);
+  const [lmp, setLmp] = useState<Date | null>(null); // Last Menstrual Period
+  const [currentWeek, setCurrentWeek] = useState<number | null>(null);
+  const [showLmpPicker, setShowLmpPicker] = useState(false);
 
   // State for Vitals
   const [weight, setWeight] = useState<string>('');
@@ -77,47 +86,127 @@ export default function TrackingScreen() {
   // Loading state
   const [loading, setLoading] = useState<boolean>(true);
 
-  const userId = auth.currentUser?.uid;
+  // Listen for auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log(`[Auth] User detected: ${user.uid}`);
+        setUserId(user.uid);
+      } else {
+        console.log('[Auth] No user detected.');
+        setUserId(null);
+      }
+    });
+    return () => unsubscribe(); // Cleanup on unmount
+  }, []);
 
+  // Fetch data when userId is available
   useEffect(() => {
     if (!userId) {
-      Alert.alert('Error', 'User not authenticated.');
+      // Clear all data and stop loading if user logs out
+      setLmp(null);
+      setVitalsList([]);
+      setSymptomsList([]);
+      setAppointmentsList([]);
       setLoading(false);
       return;
     }
 
+    console.log(`[Data] Setting up listeners for userId: ${userId}`);
+    setLoading(true);
+
+    // --- Setup listeners for user-specific data ---
+    const userDocRef = doc(db, 'users', userId);
+
+    // 1. Fetch LMP (one-time fetch)
+    getDoc(userDocRef)
+      .then(docSnap => {
+        console.log('[Data] LMP document snapshot received.');
+        if (docSnap.exists() && docSnap.data().lmp) {
+          console.log('[Data] LMP found in document:', docSnap.data().lmp.toDate());
+          setLmp(docSnap.data().lmp.toDate());
+        } else {
+          console.log('[Data] LMP not found for this user.');
+          setLmp(null); // Clear LMP if not found for this user
+        }
+      })
+      .catch(error => console.error("Error fetching LMP: ", error))
+      .finally(() => setLoading(false)); // Stop loading after LMP is checked
+
+    // 2. Listen for vitals changes
     const vitalsQuery = query(collection(db, 'users', userId, 'vitals'), orderBy('createdAt', 'desc'));
     const unsubscribeVitals = onSnapshot(vitalsQuery, (snapshot) => {
       const vitalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vitals));
+      console.log('[Data] Vitals received:', vitalsData);
       setVitalsList(vitalsData);
     });
 
+    // 3. Listen for symptoms changes
     const symptomsQuery = query(collection(db, 'users', userId, 'symptoms'), orderBy('createdAt', 'desc'));
     const unsubscribeSymptoms = onSnapshot(symptomsQuery, (snapshot) => {
       const symptomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Symptom));
+      console.log('[Data] Symptoms received:', symptomsData);
       setSymptomsList(symptomsData);
     });
 
+    // 4. Listen for appointments changes
     const appointmentsQuery = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
     const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
       const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+      console.log('[Data] Appointments received:', appointmentsData);
       setAppointmentsList(appointmentsData);
     });
 
-    setLoading(false);
-
+    // Return a cleanup function to unsubscribe from listeners on unmount
     return () => {
+      console.log(`[Data] Cleaning up listeners for userId: ${userId}`);
       unsubscribeVitals();
       unsubscribeSymptoms();
       unsubscribeAppointments();
     };
   }, [userId]);
 
+  // Calculate week when LMP changes
+  useEffect(() => {
+    if (lmp) {
+      const today = new Date();
+      if (lmp > today) {
+        setCurrentWeek(0);
+        return;
+      }
+      const diffTime = Math.abs(today.getTime() - lmp.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const currentWeekNumber = Math.floor(diffDays / 7);
+      setCurrentWeek(currentWeekNumber);
+    } else {
+      setCurrentWeek(null); // Clear week if LMP is cleared
+    }
+  }, [lmp]);
+
+  const handleLmpChange = (event: any, selectedDate?: Date) => {
+    setShowLmpPicker(false);
+    if (selectedDate && userId) {
+      const today = new Date();
+      if (selectedDate > today) {
+        Alert.alert("Fecha inválida", "La fecha de última menstruación no puede ser en el futuro.");
+        return;
+      }
+      setLmp(selectedDate);
+      const userDocRef = doc(db, 'users', userId);
+      setDoc(userDocRef, { lmp: selectedDate }, { merge: true });
+    }
+  };
+
   const handleSaveVitals = async () => {
-    if (!userId || !weight || !bloodPressure) {
+    if (!userId) {
+      Alert.alert('Error', 'No user ID found. Cannot save.');
+      return;
+    }
+    if (!weight || !bloodPressure) {
       Alert.alert('Error', 'Por favor, ingrese el peso y la presión arterial.');
       return;
     }
+    console.log(`[Data] Saving vitals for userId: ${userId}`);
     try {
       await addDoc(collection(db, 'users', userId, 'vitals'), {
         weight,
@@ -135,10 +224,15 @@ export default function TrackingScreen() {
   };
 
   const handleSaveSymptom = async () => {
-    if (!userId || !symptom) {
+    if (!userId) {
+        Alert.alert('Error', 'No user ID found. Cannot save.');
+        return;
+    }
+    if (!symptom) {
       Alert.alert('Error', 'Por favor, ingrese un síntoma.');
       return;
     }
+    console.log(`[Data] Saving symptom for userId: ${userId}`);
     try {
       await addDoc(collection(db, 'users', userId, 'symptoms'), {
         symptom,
@@ -154,10 +248,15 @@ export default function TrackingScreen() {
   };
 
   const handleSaveAppointment = async () => {
-    if (!userId || !appointmentDate || !appointmentTime) {
+    if (!userId) {
+        Alert.alert('Error', 'No user ID found. Cannot save.');
+        return;
+    }
+    if (!appointmentDate || !appointmentTime) {
       Alert.alert('Error', 'Por favor, complete la fecha y hora de la cita.');
       return;
     }
+    console.log(`[Data] Saving appointment for userId: ${userId}`);
     try {
       await addDoc(collection(db, 'users', userId, 'appointments'), {
         date: appointmentDate,
@@ -175,8 +274,31 @@ export default function TrackingScreen() {
     }
   };
   
-  const getFetusImage = (week: number) => {
-    return `https://via.placeholder.com/300x300.png?text=Feto+Semana+${week}`;
+  const getFetusImageSource = (week: number | null) => {
+    if (week === null) {
+      return require('../../assets/images/fetus/placeholder.png');
+    }
+
+    switch (week) {
+      case 1:
+        return require('../../assets/images/fetus/semana_1.png');
+      case 2:
+        return require('../../assets/images/fetus/semana_2.png');
+      case 3:
+        return require('../../assets/images/fetus/semana_3.png');
+      case 4:
+        return require('../../assets/images/fetus/semana_4.png');
+      // TODO: For each image you add to the 'fetus' folder, add a case here.
+      /*
+      case 5:
+        return require('../../assets/images/fetus/semana_5.png');
+      case 6:
+        return require('../../assets/images/fetus/semana_6.png');
+      */
+      
+      default:
+        return require('../../assets/images/fetus/placeholder.png');
+    }
   };
 
   if (loading) {
@@ -187,16 +309,49 @@ export default function TrackingScreen() {
     );
   }
 
+  if (!userId) {
+    return (
+        <ThemedView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <ThemedText>Por favor, inicia sesión para ver tus datos.</ThemedText>
+        </ThemedView>
+    )
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollViewContent}>
       {/* Fetal Development Tracking */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
-        <Image
-          source={{ uri: getFetusImage(currentWeek) }}
-          style={styles.fetalImage}
-        />
-        <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
+        {lmp && currentWeek !== null ? (
+          <>
+            <Image
+              source={getFetusImageSource(currentWeek)}
+              style={styles.fetalImage}
+              onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+            />
+            <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
+            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.buttonText}>Cambiar FUM</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <ThemedText style={styles.emptyListText}>
+              Para comenzar, por favor ingresa la fecha de tu última menstruación.
+            </ThemedText>
+            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.buttonText}>Ingresar FUM</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        {showLmpPicker && (
+          <DateTimePicker
+            value={lmp || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleLmpChange}
+          />
+        )}
       </ThemedView>
 
       {/* Vitals Tracking */}
@@ -222,17 +377,16 @@ export default function TrackingScreen() {
         </TouchableOpacity>
 
         <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
-        <FlatList
-          data={vitalsList}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <Text style={styles.logText}>Peso: {item.weight} kg, Presión: {item.bloodPressure}</Text>
-              <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
+        {vitalsList.length > 0 ? (
+          vitalsList.map((item) => (
+            <View key={item.id} style={{ backgroundColor: isDarkMode ? '#333' : '#EEE', padding: 10, marginVertical: 4, borderRadius: 5 }}>
+              <Text style={{ color: isDarkMode ? 'white' : 'black' }}>Peso: {item.weight} kg, Presión: {item.bloodPressure}</Text>
+              <Text style={{ color: isDarkMode ? '#AAA' : '#555', fontSize: 12 }}>Fecha: {item.date}</Text>
             </View>
-          )}
-          ListEmptyComponent={<Text style={styles.emptyListText}>No hay signos vitales registrados.</Text>}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay signos vitales registrados.</Text>
+        )}
       </ThemedView>
 
       {/* Symptom Logging */}
@@ -250,17 +404,16 @@ export default function TrackingScreen() {
         </TouchableOpacity>
 
         <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
-        <FlatList
-          data={symptomsList}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
+        {symptomsList.length > 0 ? (
+          symptomsList.map((item) => (
+            <View key={item.id} style={styles.listItem}>
               <Text style={styles.logText}>{item.symptom}</Text>
               <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
             </View>
-          )}
-          ListEmptyComponent={<Text style={styles.emptyListText}>No hay síntomas registrados.</Text>}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay síntomas registrados.</Text>
+        )}
       </ThemedView>
 
       {/* Medical Appointments */}
@@ -294,17 +447,16 @@ export default function TrackingScreen() {
         </TouchableOpacity>
 
         <ThemedText style={styles.listTitle}>Próximas Citas</ThemedText>
-        <FlatList
-          data={appointmentsList}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
+        {appointmentsList.length > 0 ? (
+          appointmentsList.map((item) => (
+            <View key={item.id} style={styles.listItem}>
               <Text style={styles.logTextBold}>{item.date} a las {item.time}</Text>
               <Text style={styles.logText}>{item.notes}</Text>
             </View>
-          )}
-          ListEmptyComponent={<Text style={styles.emptyListText}>No hay citas registradas.</Text>}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay citas registradas.</Text>
+        )}
       </ThemedView>
     </ScrollView>
   );

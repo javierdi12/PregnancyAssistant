@@ -33,30 +33,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tracking"
-        options={{
-          title: 'Tracking',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.clipboard" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="ai-assistant"
         options={{
           title: 'AI Assistant',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Mi Perfil',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />
         }}
       />
       <Tabs.Screen
         name="tracking"
         options={{
-          title: 'Seguimiento',
+          title: 'Tracking',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
         }}
       />
