@@ -1,36 +1,52 @@
-// This component provides a comprehensive tracking screen for pregnancy, allowing users to monitor fetal development, vital signs, symptoms, and appointments.
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  View,
+  useColorScheme,
+} from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import {
-  addDoc,
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp
-} from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from 'react-native';
 import { auth, db } from '../../FireBase';
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  doc,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore';
 
-// Define types for our data structures for better type checking
-/**
- * Interface for an Appointment record.
- */
+// Interfaces for data structures
+interface Vitals {
+  id: string;
+  weight: string;
+  bloodPressure: string;
+  date: string;
+  createdAt: Timestamp;
+}
+
+interface Symptom {
+  id: string;
+  symptom: string;
+  date: string;
+  createdAt: Timestamp;
+}
+
 interface Appointment {
   id: string;
   date: string;
@@ -39,223 +55,252 @@ interface Appointment {
   createdAt: Timestamp;
 }
 
-/**
- * Interface for a Symptom record.
- */
-interface Symptom {
-  id: string;
-  symptom: string;
-  date: string;
-  createdAt: Timestamp;
-}
-
-/**
- * Interface for Vitals record.
- */
-interface Vitals {
-  id: string;
-  weight: string;
-  bloodPressure: string;
-  createdAt: Timestamp;
-  date: string;
-}
-
-/**
- * TrackingScreen component displays various pregnancy tracking features.
- * It allows users to log vitals, symptoms, and appointments, and view fetal development.
- */
 export default function TrackingScreen() {
-  // Hook to determine the current color scheme (light/dark) for UI theming.
   const colorScheme = useColorScheme();
-  // Boolean to check if dark mode is active.
   const isDarkMode = colorScheme === 'dark';
-
-  // State to manage the loading status of data.
-  const [loading, setLoading] = useState(true);
-  // State to store the current week of pregnancy for fetal development tracking.
-  const [currentWeek] = useState(10);
-
-  // States for vital signs input and history.
-  const [weight, setWeight] = useState('');
-  const [bloodPressure, setBloodPressure] = useState('');
-  const [vitalsHistory, setVitalsHistory] = useState<Vitals[]>([]);
-
-  // States for symptom input and history.
-  const [symptom, setSymptom] = useState('');
-  const [symptoms, setSymptoms] = useState<Symptom[]>([]);
-
-  // States for appointment input and history.
-  const [appointmentDate, setAppointmentDate] = useState('');
-  const [appointmentTime, setAppointmentTime] = useState('');
-  const [appointmentNotes, setAppointmentNotes] = useState('');
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-
-  /**
-   * Generic function to fetch data from a specified Firestore collection.
-   * @param collectionName The name of the collection to fetch (e.g., 'vitals', 'symptoms').
-   * @param setData The state setter function to update the component's state with the fetched data.
-   */
-  const fetchCollectionData = async <T extends { id: string }>(
-    collectionName: string,
-    setData: React.Dispatch<React.SetStateAction<T[]>>
-  ) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-      const q = query(
-        collection(db, 'users', user.uid, collectionName),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as T[];
-      setData(data);
-    } catch (error) {
-      console.error(`Error fetching ${collectionName} data: `, error);
-      Alert.alert('Error', `Could not retrieve ${collectionName} from the cloud.`);
-    }
-  };
-
-  /**
-   * useEffect hook to fetch data from Firestore when the component mounts.
-   * It fetches vitals history, symptoms, and appointments for the current user.
-   */
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchCollectionData<Vitals>('vitals', setVitalsHistory),
-        fetchCollectionData<Symptom>('symptoms', setSymptoms),
-        fetchCollectionData<Appointment>('appointments', setAppointments),
-      ]);
-      setLoading(false);
-    };
-
-    fetchData();
-  }, []);
-
-  /**
-   * Generic function to add a new document to a specified Firestore collection.
-   * @param collectionName The name of the collection to add the document to.
-   * @param newDocument The document data to add.
-   * @param setData The state setter function to update the component's state with the new document.
-   * @param successMessage Optional success message to display.
-   * @param errorMessage Optional error message to display.
-   */
-  const addDocumentToCollection = async <T extends { id: string }>(
-    collectionName: string,
-    newDocument: Omit<T, 'id'>,
-    setData: React.Dispatch<React.SetStateAction<T[]>>,
-    successMessage?: string,
-    errorMessage?: string
-  ) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, collectionName), newDocument);
-      setData(prev => [{ id: docRef.id, ...newDocument } as T, ...prev]);
-      if (successMessage) Alert.alert('Success', successMessage);
-    } catch (error) {
-      console.error(`Error adding ${collectionName} document: `, error);
-      Alert.alert('Error', errorMessage || `Could not save the ${collectionName}.`);
-    }
-  };
-
-  /**
-   * Handles adding a new symptom to Firestore.
-   * Requires user to be authenticated and symptom input not to be empty.
-   */
-  const handleAddSymptom = async () => {
-    const user = auth.currentUser;
-    if (!user || !symptom.trim()) return;
-
-    const newSymptom = {
-      symptom,
-      date: new Date().toLocaleDateString(),
-      createdAt: Timestamp.now(),
-    };
-
-    await addDocumentToCollection<Symptom>(
-      'symptoms',
-      newSymptom,
-      setSymptoms,
-      undefined,
-      'Could not save the symptom.'
-    );
-    setSymptom(''); // Clear input field after submission.
-  };
-
-  /**
-   * Handles adding a new appointment to Firestore.
-   * Requires user to be authenticated and appointment date/time not to be empty.
-   */
-  const handleAddAppointment = async () => {
-    const user = auth.currentUser;
-    if (!user || !appointmentDate.trim() || !appointmentTime.trim()) return;
-
-    const newAppointment = {
-      date: appointmentDate,
-      time: appointmentTime,
-      notes: appointmentNotes,
-      createdAt: Timestamp.now(),
-    };
-
-    await addDocumentToCollection<Appointment>(
-      'appointments',
-      newAppointment,
-      setAppointments,
-      undefined,
-      'Could not save the appointment.'
-    );
-    setAppointmentDate(''); // Clear input field after submission.
-    setAppointmentTime(''); // Clear input field after submission.
-    setAppointmentNotes(''); // Clear input field after submission.
-  };
-
-  /**
-   * Handles adding new vital signs to Firestore.
-   * Requires user to be authenticated and at least weight or blood pressure to be entered.
-   */
-  const handleAddVitals = async () => {
-    const user = auth.currentUser;
-    if (!user || (!weight.trim() && !bloodPressure.trim())) return;
-
-    const newVitals = {
-      weight,
-      bloodPressure,
-      date: new Date().toLocaleDateString(),
-      createdAt: Timestamp.now(),
-    };
-
-    await addDocumentToCollection<Vitals>(
-      'vitals',
-      newVitals,
-      setVitalsHistory,
-      'Vital signs saved successfully.',
-      'Could not save vital signs.'
-    );
-    setWeight(''); // Clear input field after submission.
-    setBloodPressure(''); // Clear input field after submission.
-  };
-
-  // Dynamically create styles based on the current dark mode setting.
   const styles = getStyles(isDarkMode);
 
-  /**
-   * Generates a placeholder image URL for fetal development based on the current week.
-   * In a real application, this would be replaced with actual images or a more sophisticated image generation logic.
-   * @param week The current week of pregnancy.
-   * @returns A URL for a placeholder image.
-   */
-  const getFetusImage = (week: number) => {
-    return `https://via.placeholder.com/300x300.png?text=Fetus+Week+${week}`;
+  // Auth state
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // State for Fetal Development
+  const [lmp, setLmp] = useState<Date | null>(null); // Last Menstrual Period
+  const [currentWeek, setCurrentWeek] = useState<number | null>(null);
+  const [showLmpPicker, setShowLmpPicker] = useState(false);
+
+  // State for Vitals
+  const [weight, setWeight] = useState<string>('');
+  const [bloodPressure, setBloodPressure] = useState<string>('');
+  const [vitalsList, setVitalsList] = useState<Vitals[]>([]);
+
+  // State for Symptoms
+  const [symptom, setSymptom] = useState<string>('');
+  const [symptomsList, setSymptomsList] = useState<Symptom[]>([]);
+
+  // State for Appointments
+  const [appointmentDate, setAppointmentDate] = useState<string>('');
+  const [appointmentTime, setAppointmentTime] = useState<string>('');
+  const [appointmentNotes, setAppointmentNotes] = useState<string>('');
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
+
+  // Loading state
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Listen for auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log(`[Auth] User detected: ${user.uid}`);
+        setUserId(user.uid);
+      } else {
+        console.log('[Auth] No user detected.');
+        setUserId(null);
+      }
+    });
+    return () => unsubscribe(); // Cleanup on unmount
+  }, []);
+
+  // Fetch data when userId is available
+  useEffect(() => {
+    if (!userId) {
+      // Clear all data and stop loading if user logs out
+      setLmp(null);
+      setVitalsList([]);
+      setSymptomsList([]);
+      setAppointmentsList([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log(`[Data] Setting up listeners for userId: ${userId}`);
+    setLoading(true);
+
+    // --- Setup listeners for user-specific data ---
+    const userDocRef = doc(db, 'users', userId);
+
+    // 1. Fetch LMP (one-time fetch)
+    getDoc(userDocRef)
+      .then(docSnap => {
+        console.log('[Data] LMP document snapshot received.');
+        if (docSnap.exists() && docSnap.data().lmp) {
+          console.log('[Data] LMP found in document:', docSnap.data().lmp.toDate());
+          setLmp(docSnap.data().lmp.toDate());
+        } else {
+          console.log('[Data] LMP not found for this user.');
+          setLmp(null); // Clear LMP if not found for this user
+        }
+      })
+      .catch(error => console.error("Error fetching LMP: ", error))
+      .finally(() => setLoading(false)); // Stop loading after LMP is checked
+
+    // 2. Listen for vitals changes
+    const vitalsQuery = query(collection(db, 'users', userId, 'vitals'), orderBy('createdAt', 'desc'));
+    const unsubscribeVitals = onSnapshot(vitalsQuery, (snapshot) => {
+      const vitalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vitals));
+      console.log('[Data] Vitals received:', vitalsData);
+      setVitalsList(vitalsData);
+    });
+
+    // 3. Listen for symptoms changes
+    const symptomsQuery = query(collection(db, 'users', userId, 'symptoms'), orderBy('createdAt', 'desc'));
+    const unsubscribeSymptoms = onSnapshot(symptomsQuery, (snapshot) => {
+      const symptomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Symptom));
+      console.log('[Data] Symptoms received:', symptomsData);
+      setSymptomsList(symptomsData);
+    });
+
+    // 4. Listen for appointments changes
+    const appointmentsQuery = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
+    const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
+      const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+      console.log('[Data] Appointments received:', appointmentsData);
+      setAppointmentsList(appointmentsData);
+    });
+
+    // Return a cleanup function to unsubscribe from listeners on unmount
+    return () => {
+      console.log(`[Data] Cleaning up listeners for userId: ${userId}`);
+      unsubscribeVitals();
+      unsubscribeSymptoms();
+      unsubscribeAppointments();
+    };
+  }, [userId]);
+
+  // Calculate week when LMP changes
+  useEffect(() => {
+    if (lmp) {
+      const today = new Date();
+      if (lmp > today) {
+        setCurrentWeek(0);
+        return;
+      }
+      const diffTime = Math.abs(today.getTime() - lmp.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const currentWeekNumber = Math.floor(diffDays / 7);
+      setCurrentWeek(currentWeekNumber);
+    } else {
+      setCurrentWeek(null); // Clear week if LMP is cleared
+    }
+  }, [lmp]);
+
+  const handleLmpChange = (event: any, selectedDate?: Date) => {
+    setShowLmpPicker(false);
+    if (selectedDate && userId) {
+      const today = new Date();
+      if (selectedDate > today) {
+        Alert.alert("Fecha inválida", "La fecha de última menstruación no puede ser en el futuro.");
+        return;
+      }
+      setLmp(selectedDate);
+      const userDocRef = doc(db, 'users', userId);
+      setDoc(userDocRef, { lmp: selectedDate }, { merge: true });
+    }
   };
 
-  // Display a loading indicator while data is being fetched.
+  const handleSaveVitals = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'No user ID found. Cannot save.');
+      return;
+    }
+    if (!weight || !bloodPressure) {
+      Alert.alert('Error', 'Por favor, ingrese el peso y la presión arterial.');
+      return;
+    }
+    console.log(`[Data] Saving vitals for userId: ${userId}`);
+    try {
+      await addDoc(collection(db, 'users', userId, 'vitals'), {
+        weight,
+        bloodPressure,
+        date: new Date().toLocaleDateString(),
+        createdAt: serverTimestamp(),
+      });
+      setWeight('');
+      setBloodPressure('');
+      Alert.alert('Éxito', '¡Signos vitales guardados con éxito!');
+    } catch (error) {
+      console.error('Error saving vitals: ', error);
+      Alert.alert('Error', 'No se pudieron guardar los signos vitales.');
+    }
+  };
+
+  const handleSaveSymptom = async () => {
+    if (!userId) {
+        Alert.alert('Error', 'No user ID found. Cannot save.');
+        return;
+    }
+    if (!symptom) {
+      Alert.alert('Error', 'Por favor, ingrese un síntoma.');
+      return;
+    }
+    console.log(`[Data] Saving symptom for userId: ${userId}`);
+    try {
+      await addDoc(collection(db, 'users', userId, 'symptoms'), {
+        symptom,
+        date: new Date().toLocaleDateString(),
+        createdAt: serverTimestamp(),
+      });
+      setSymptom('');
+      Alert.alert('Éxito', '¡Síntoma guardado con éxito!');
+    } catch (error) {
+      console.error('Error saving symptom: ', error);
+      Alert.alert('Error', 'No se pudo guardar el síntoma.');
+    }
+  };
+
+  const handleSaveAppointment = async () => {
+    if (!userId) {
+        Alert.alert('Error', 'No user ID found. Cannot save.');
+        return;
+    }
+    if (!appointmentDate || !appointmentTime) {
+      Alert.alert('Error', 'Por favor, complete la fecha y hora de la cita.');
+      return;
+    }
+    console.log(`[Data] Saving appointment for userId: ${userId}`);
+    try {
+      await addDoc(collection(db, 'users', userId, 'appointments'), {
+        date: appointmentDate,
+        time: appointmentTime,
+        notes: appointmentNotes,
+        createdAt: serverTimestamp(),
+      });
+      setAppointmentDate('');
+      setAppointmentTime('');
+      setAppointmentNotes('');
+      Alert.alert('Éxito', '¡Cita guardada con éxito!');
+    } catch (error) {
+      console.error('Error saving appointment: ', error);
+      Alert.alert('Error', 'No se pudo guardar la cita.');
+    }
+  };
+  
+  const getFetusImageSource = (week: number | null) => {
+    if (week === null) {
+      return require('../../assets/images/fetus/placeholder.png');
+    }
+
+    switch (week) {
+      case 1:
+        return require('../../assets/images/fetus/semana_1.png');
+      case 2:
+        return require('../../assets/images/fetus/semana_2.png');
+      case 3:
+        return require('../../assets/images/fetus/semana_3.png');
+      case 4:
+        return require('../../assets/images/fetus/semana_4.png');
+      // TODO: For each image you add to the 'fetus' folder, add a case here.
+      /*
+      case 5:
+        return require('../../assets/images/fetus/semana_5.png');
+      case 6:
+        return require('../../assets/images/fetus/semana_6.png');
+      */
+      
+      default:
+        return require('../../assets/images/fetus/placeholder.png');
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -264,109 +309,154 @@ export default function TrackingScreen() {
     );
   }
 
+  if (!userId) {
+    return (
+        <ThemedView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <ThemedText>Por favor, inicia sesión para ver tus datos.</ThemedText>
+        </ThemedView>
+    )
+  }
+
   return (
-    // Main scrollable container for the tracking screen.
-    <ScrollView style={styles.container}>
-      {/* Section for Fetal Development Tracking */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollViewContent}>
+      {/* Fetal Development Tracking */}
       <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Fetal Development Weekly</ThemedText>
-        <Image source={{ uri: getFetusImage(currentWeek) }} style={styles.fetusImage} />
-        <ThemedText style={styles.weekText}>Current Week: {currentWeek}</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
+        {lmp && currentWeek !== null ? (
+          <>
+            <Image
+              source={getFetusImageSource(currentWeek)}
+              style={styles.fetalImage}
+              onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+            />
+            <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
+            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.buttonText}>Cambiar FUM</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <ThemedText style={styles.emptyListText}>
+              Para comenzar, por favor ingresa la fecha de tu última menstruación.
+            </ThemedText>
+            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.buttonText}>Ingresar FUM</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        {showLmpPicker && (
+          <DateTimePicker
+            value={lmp || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleLmpChange}
+          />
+        )}
       </ThemedView>
 
-      {/* Section for Vital Signs Tracking */}
+      {/* Vitals Tracking */}
       <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Vital Signs Tracking</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Seguimiento de Signos Vitales</ThemedText>
         <TextInput
           style={styles.input}
-          placeholder="Weight (e.g., 70 kg)"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Peso (kg)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          keyboardType="numeric"
           value={weight}
           onChangeText={setWeight}
         />
         <TextInput
           style={styles.input}
-          placeholder="Blood Pressure (e.g., 120/80)"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Presión Arterial (ej. 120/80)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
           value={bloodPressure}
           onChangeText={setBloodPressure}
         />
-        <TouchableOpacity style={styles.button} onPress={handleAddVitals}>
-          <Text style={styles.buttonText}>Save Vital Signs</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSaveVitals}>
+          <Text style={styles.buttonText}>Guardar Signos Vitales</Text>
         </TouchableOpacity>
-        <FlatList
-          data={vitalsHistory}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.logItem}>
-              <Text style={styles.logText}>{item.date}: Weight: {item.weight}, BP: {item.bloodPressure}</Text>
+
+        <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
+        {vitalsList.length > 0 ? (
+          vitalsList.map((item) => (
+            <View key={item.id} style={{ backgroundColor: isDarkMode ? '#333' : '#EEE', padding: 10, marginVertical: 4, borderRadius: 5 }}>
+              <Text style={{ color: isDarkMode ? 'white' : 'black' }}>Peso: {item.weight} kg, Presión: {item.bloodPressure}</Text>
+              <Text style={{ color: isDarkMode ? '#AAA' : '#555', fontSize: 12 }}>Fecha: {item.date}</Text>
             </View>
-          )}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay signos vitales registrados.</Text>
+        )}
       </ThemedView>
 
-      {/* Section for Symptom Logging */}
+      {/* Symptom Logging */}
       <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Symptom Log</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Registro de Síntomas</ThemedText>
         <TextInput
           style={styles.input}
-          placeholder="Enter a symptom (e.g., Nausea)"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Describe tu síntoma"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
           value={symptom}
           onChangeText={setSymptom}
         />
-        <TouchableOpacity style={styles.button} onPress={handleAddSymptom}>
-          <Text style={styles.buttonText}>Add Symptom</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSaveSymptom}>
+          <Text style={styles.buttonText}>Guardar Síntoma</Text>
         </TouchableOpacity>
-        <FlatList
-          data={symptoms}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.logItem}>
-              <Text style={styles.logText}>{item.symptom} - {item.date}</Text>
+
+        <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
+        {symptomsList.length > 0 ? (
+          symptomsList.map((item) => (
+            <View key={item.id} style={styles.listItem}>
+              <Text style={styles.logText}>{item.symptom}</Text>
+              <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
             </View>
-          )}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay síntomas registrados.</Text>
+        )}
       </ThemedView>
 
-      {/* Section for Medical Appointments */}
+      {/* Medical Appointments */}
       <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Medical Appointments</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Gestión de Citas Médicas</ThemedText>
         <TextInput
           style={styles.input}
-          placeholder="Date (e.g., 2025-12-25)"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Fecha (DD/MM/AAAA)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
           value={appointmentDate}
           onChangeText={setAppointmentDate}
         />
         <TextInput
           style={styles.input}
-          placeholder="Time (e.g., 10:00 AM)"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Hora (HH:MM)"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
           value={appointmentTime}
           onChangeText={setAppointmentTime}
         />
         <TextInput
-          style={[styles.input, styles.multilineInput]}
-          placeholder="Notes..."
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          style={[styles.input, styles.textArea]}
+          placeholder="Notas de la cita"
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          multiline
+          numberOfLines={3}
           value={appointmentNotes}
           onChangeText={setAppointmentNotes}
-          multiline
         />
-        <TouchableOpacity style={styles.button} onPress={handleAddAppointment}>
-          <Text style={styles.buttonText}>Add Appointment</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSaveAppointment}>
+          <Text style={styles.buttonText}>Guardar Cita</Text>
         </TouchableOpacity>
-        <FlatList
-          data={appointments}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.logItem}>
-              <Text style={styles.logTextBold}>{item.date} at {item.time}</Text>
+
+        <ThemedText style={styles.listTitle}>Próximas Citas</ThemedText>
+        {appointmentsList.length > 0 ? (
+          appointmentsList.map((item) => (
+            <View key={item.id} style={styles.listItem}>
+              <Text style={styles.logTextBold}>{item.date} a las {item.time}</Text>
               <Text style={styles.logText}>{item.notes}</Text>
             </View>
-          )}
-        />
+          ))
+        ) : (
+          <Text style={styles.emptyListText}>No hay citas registradas.</Text>
+        )}
       </ThemedView>
     </ScrollView>
   );
@@ -377,11 +467,20 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flex: 1,
     backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
   },
+  scrollViewContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
   section: {
-    margin: 16,
+    marginVertical: 8,
     padding: 16,
     borderRadius: 8,
     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 20,
@@ -389,12 +488,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 16,
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
-  fetusImage: {
+  fetalImage: {
     width: '100%',
-    height: 300,
+    height: 250,
     borderRadius: 8,
     marginBottom: 16,
     backgroundColor: '#ccc',
+    resizeMode: 'contain',
   },
   weekText: {
     textAlign: 'center',
@@ -413,8 +513,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: isDarkMode ? '#FFFFFF' : '#333333',
     backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
   },
-  multilineInput: {
-    height: 100,
+  textArea: {
+    height: 80,
     textAlignVertical: 'top',
     paddingTop: 15,
   },
@@ -430,7 +530,14 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  logItem: {
+  listTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 10,
+    color: isDarkMode ? Colors.dark.text : Colors.light.text,
+  },
+  listItem: {
     backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
     padding: 12,
     borderRadius: 8,
@@ -442,9 +549,19 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 14,
     color: isDarkMode ? '#E0E0E0' : '#424242',
   },
+  logTextDate: {
+    fontSize: 12,
+    color: isDarkMode ? '#aaa' : '#777',
+    marginTop: 4,
+  },
   logTextBold: {
     fontSize: 16,
     fontWeight: 'bold',
     color: isDarkMode ? '#FFFFFF' : '#212121',
+  },
+  emptyListText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: isDarkMode ? '#aaa' : '#777',
   },
 });
