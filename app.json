@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "La app necesita acceder a tu ubicación para mostrar provincia, cantón y distrito."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +20,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.preganassist.PregnancyAssistant"
+      "package": "com.preganassist.PregnancyAssistant",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -35,7 +42,13 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "La app necesita acceder a tu ubicación para mostrar provincia, cantón y distrito."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
