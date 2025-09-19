@@ -48,16 +48,13 @@ const handleAskAI = async () => {
     return;
   }
   
-  if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE' || !GEMINI_API_KEY) {
-    Alert.alert('Error de Configuración', 'Por favor, reemplaza \'YOUR_GEMINI_API_KEY_HERE\' con tu clave API de Gemini real.');
-    return;
-  }
+  
 
   setAskingAI(true);
   setAiResponse(null);
 
   try {
-    //  URL CORRECTA con modelo actualizado
+    //  URL 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
