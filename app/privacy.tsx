@@ -55,7 +55,7 @@ export default function PrivacyScreen() {
       );
 
       // Redirect to home with query parameters
-      router.replace('/welcome');
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Error guardando términos:', error);
     }
