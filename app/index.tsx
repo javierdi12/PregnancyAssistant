@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithCredential,
   signInWithEmailAndPassword
 } from 'firebase/auth';
@@ -40,7 +41,7 @@ export default function LoginScreen() {
   const intervalRef = useRef<IntervalHandle | null>(null);
   const timeoutRef = useRef<TimeoutHandle | null>(null);
 
- // Function to verify if the user accepted terms
+  // Function to verify if the user accepted terms
   const checkTermsAccepted = async (): Promise<boolean> => {
     try {
       const termsAccepted = await AsyncStorage.getItem('terms_accepted');
@@ -58,11 +59,11 @@ export default function LoginScreen() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {  // Listens for changes in authentication status
       if (user && isMountedRef.current) {
         const termsAccepted = await checkTermsAccepted();
-        
+
         if (termsAccepted) {
-          router.replace('/(tabs)'); 
+          router.replace('/(tabs)');
         } else {
-          router.replace('/privacy'); 
+          router.replace('/privacy');
         }
       }
     });
@@ -70,7 +71,7 @@ export default function LoginScreen() {
     return () => {
       isMountedRef.current = false;
       unsubscribe();
-      
+
       // Clear intervals and timeouts
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -89,6 +90,14 @@ export default function LoginScreen() {
 
   const signIn = async () => { // Function to log in with email and password
     safeSetIsLoading(true);
+    if (!email || !password) {
+      Alert.alert('Campos requeridos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
@@ -99,16 +108,26 @@ export default function LoginScreen() {
           router.replace('/privacy');
         }
       }
-    } catch (err) {
-      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
-      Alert.alert('Error', 'Error al iniciar sesión: ' + errorMsg);
+    } catch (error) {
+      
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
     } finally {
       safeSetIsLoading(false);
     }
   };
 
-  const signUp = async () => { // Function to create account with email and password
+  const signUp = async () => {
     safeSetIsLoading(true);
+    if (!email || !password) {
+      Alert.alert('Campos requeridos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Email inválido', 'Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
+    
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
       if (user && isMountedRef.current) {
@@ -119,11 +138,28 @@ export default function LoginScreen() {
           router.replace('/privacy');
         }
       }
-    } catch (err) {
-      const errorMsg = err && typeof err === 'object' && 'message' in err ? err.message : String(err);
-      Alert.alert('Error', 'Error al crear cuenta: ' + errorMsg);
+    } catch (error) {
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
     } finally {
       safeSetIsLoading(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!email) {
+      Alert.alert("Campo requerido", "Por favor, ingresa tu correo para restablecer la contraseña.");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert("Correo enviado", "Revisa tu bandeja de entrada y sigue las instrucciones para restablecer tu contraseña.");
+    } catch (error: any) {
+      const errorMsg = getFirebaseErrorMessage(error);
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,61 +206,61 @@ export default function LoginScreen() {
   const handleFacebookWebLogin = async () => {  // Function to log in with Facebook on the web using a popup
     const redirectUri = window.location.origin;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
-    
+
     const width = 600;
     const height = 600;
     const left = (window.innerWidth - width) / 2;
     const top = (window.innerHeight - height) / 2;
-    
+
     const popup = window.open(
       authUrl,
       'Facebook Login',
       `width=${width},height=${height},top=${top},left=${left}`
     );
-    
+
     if (!popup) {
       Alert.alert('Error', 'Por favor permite ventanas emergentes para este sitio');
       safeSetIsLoading(false);
       return;
     }
-    
+
     popupRef.current = popup;
     let popupClosed = false;
-    
+
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
+
     intervalRef.current = setInterval(() => {  // Interval to check if popup closed or has token
       try {
         if (!isMountedRef.current) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           return;
         }
-        
+
         if (popup.closed) {
           popupClosed = true;
           if (intervalRef.current) clearInterval(intervalRef.current);
           safeSetIsLoading(false);
           return;
         }
-        
+
         if (popup.location.href.startsWith(redirectUri)) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           const url = popup.location.href;
-          
+
           const hashParams = new URLSearchParams(url.split('#')[1]);
           const accessToken = hashParams.get('access_token');
           const facebookError = hashParams.get('error');
           const errorReason = hashParams.get('error_reason');
-          
+
           if (accessToken) {
             handleFacebookToken(accessToken);
           } else if (facebookError) {
             const errorDescription = hashParams.get('error_description') || 'Error desconocido';
-            
+
             if (errorDescription.includes('Invalid Scopes') || errorReason === 'user_denied') {
               Alert.alert(
-                'Permisos insuficientes', 
+                'Permisos insuficientes',
                 'Para usar el inicio de sesión con Facebook, necesitamos acceso a tu dirección de email. Por favor, acepta todos los permisos solicitados.'
               );
             } else {
@@ -232,14 +268,14 @@ export default function LoginScreen() {
             }
             safeSetIsLoading(false);
           }
-          
+
           popup.close();
         }
       } catch (intervalError) {
         console.error('Interval error:', intervalError);
       }
     }, 100) as unknown as IntervalHandle;
-    
+
     timeoutRef.current = setTimeout(() => {  // Timeout to close popup if too much time passes
       if (!popupClosed && isMountedRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -267,7 +303,7 @@ export default function LoginScreen() {
   const handleFacebookToken = async (token: string) => { // Function to manage Facebook token and authentication with Firebase
     try {
       const userInfo = await fetchFacebookUserInfo(token);
-      
+
       if (!userInfo.email) {
         Alert.alert('Error', 'No se pudo obtener el email de Facebook. Por favor, asegúrate de haber concedido los permisos necesarios.');
         safeSetIsLoading(false);
@@ -276,7 +312,7 @@ export default function LoginScreen() {
 
       const credential = FacebookAuthProvider.credential(token);
       const userCredential = await signInWithCredential(auth, credential);
-      
+
       if (userCredential.user && isMountedRef.current) {
         const termsAccepted = await checkTermsAccepted();
         if (termsAccepted) {
@@ -287,21 +323,21 @@ export default function LoginScreen() {
       }
     } catch (err: any) {
       console.error('Error en autenticación:', err);
-      
+
       if (err.code === 'auth/account-exists-with-different-credential') {
         Alert.alert(
-          'Error', 
+          'Error',
           'Ya existe una cuenta con el mismo email pero con un método de autenticación diferente.'
         );
       } else if (err.message.includes('invalid scopes')) {
         Alert.alert(
-          'Error de configuración', 
+          'Error de configuración',
           'La aplicación Facebook no tiene configurado correctamente el permiso de email.'
         );
       } else {
         Alert.alert('Error', 'Error al autenticar con Facebook: ' + err.message);
       }
-      
+
       safeSetIsLoading(false);
     }
   };
@@ -331,32 +367,32 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Image 
+      <Image
         source={require('../assets/images/index.png')}
         style={styles.logo}
         resizeMode="contain"
       />
-      
+
       <Text style={styles.title}>Bienvenida{'\n'}Pregnancy Assistant</Text>
-      
+
       {activeAuth !== 'email' ? (
         <>
           <View style={styles.optionsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.optionButton}
               onPress={() => isMountedRef.current && setActiveAuth('email')}
             >
               <Text style={styles.optionText}>Ingresa con correo</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.optionButton}
               onPress={handleGoogleSignIn}
             >
               <Text style={styles.optionText}>Ingresa con Google</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.optionButton}
               onPress={handleFacebookSignIn}
             >
@@ -365,9 +401,9 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.divider}>o</Text>
-          
+
           <TouchableOpacity onPress={continueWithoutAccount}>
             <Text style={styles.continueWithoutAccount}>Continuar sin una cuenta</Text>
           </TouchableOpacity>
@@ -375,7 +411,7 @@ export default function LoginScreen() {
       ) : (
         <View style={styles.emailAuthContainer}>
           <Text style={styles.emailAuthTitle}>Ingresa con tu correo</Text>
-          
+
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -385,7 +421,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
           />
-          
+
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
@@ -394,16 +430,20 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
           />
-          
+
           <View style={styles.authButtonsContainer}>
             <TouchableOpacity style={styles.authButton} onPress={signIn}>
               <Text style={styles.authButtonText}>Iniciar sesión</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.authButton} onPress={signUp}>
               <Text style={styles.authButtonText}>Crear cuenta</Text>
             </TouchableOpacity>
-            
+
+            <TouchableOpacity onPress={resetPassword}>
+              <Text style={styles.optionText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={cancelEmailAuth}>
               <Text style={styles.cancelText}>Volver atrás</Text>
             </TouchableOpacity>
@@ -414,11 +454,50 @@ export default function LoginScreen() {
   );
 }
 
+// Function to validate email format
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Function to map Firebase errors to user-friendly messages
+function getFirebaseErrorMessage(error: any): string {
+  
+  // Itry to get code directly
+  let code = error?.code;
+
+  //obtain code from customData if not present
+  if (!code && error?.customData?._tokenResponse?.error?.message) {
+    const apiMsg = error.customData._tokenResponse.error.message;
+    // mapping 
+    if (apiMsg === "EMAIL_EXISTS") code = "auth/email-already-in-use";
+    if (apiMsg === "EMAIL_NOT_FOUND") code = "auth/user-not-found";
+    if (apiMsg === "INVALID_PASSWORD") code = "auth/wrong-password";
+    if (apiMsg === "WEAK_PASSWORD") code = "auth/weak-password";
+
+  }
+
+  // amigable message
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return "El correo ya está registrado. Intenta iniciar sesión o usa otro correo.";
+    case 'auth/weak-password':
+      return "La contraseña es muy débil. Usa al menos 6 caracteres.";
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return "Correo o contraseña incorrectos. Intenta de nuevo.";
+    case 'auth/invalid-email':
+      return "El formato del correo es inválido.";
+    default:
+      return "Ocurrió un error inesperado: " + (error?.message ?? "Desconocido");
+  }
+}
+
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
     paddingHorizontal: 20
   },
@@ -431,10 +510,10 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     height: 250,
     marginBottom: 20,
   },
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 40, 
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 40,
     color: isDarkMode ? '#FFFFFF' : '#1A237E',
     textAlign: 'center'
   },
