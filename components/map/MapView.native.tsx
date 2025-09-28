@@ -14,7 +14,7 @@ interface Resource {
   location: GeoPoint;
 }
 
-export default function MapScreen() {
+export default function MapViewNative() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
