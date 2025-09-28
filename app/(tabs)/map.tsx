@@ -1,0 +1,5 @@
+import MapView from '../../components/map';
+
+export default function MapScreen() {
+  return <MapView />;
+}
