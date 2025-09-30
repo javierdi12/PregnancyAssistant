@@ -10,6 +10,9 @@ interface ProfileFormData {
   nombre: string;
   apellidos: string;
   fechaNacimiento: string;
+  provincia: string;
+  canton: string;
+  distrito: string;
 }
 
 export const useProfile = () => {
@@ -17,6 +20,9 @@ export const useProfile = () => {
     nombre: '',
     apellidos: '',
     fechaNacimiento: '',
+    provincia: '',
+    canton: '',
+    distrito: '',
   });
   const [edad, setEdad] = useState<number | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -78,6 +84,9 @@ export const useProfile = () => {
           nombre: userData.nombre || '',
           apellidos: userData.apellidos || '',
           fechaNacimiento,
+          provincia: userData.provincia || '',
+          canton: userData.canton || '',
+          distrito: userData.distrito || '',
         });
       }
     } catch (error) {
@@ -114,15 +123,19 @@ export const useProfile = () => {
       return;
     }
 
-    if (!formData.nombre.trim() || !formData.apellidos.trim() || !formData.fechaNacimiento.trim()) {
-      Alert.alert('Campos incompletos', 'Debes llenar todos los campos: Nombre, Apellidos y Fecha de nacimiento');
+    if (!formData.nombre.trim() || !formData.apellidos.trim() || !formData.fechaNacimiento.trim() || !formData.provincia.trim() || !formData.canton.trim() || !formData.distrito.trim()) {
+      Alert.alert('Campos incompletos', 'Debes llenar todos los campos: Nombre, Apellidos y Fecha de nacimiento, Provincia, Cantón, Distrito');
       return;
     }
 
     const nombreConNumeros = /\d/.test(formData.nombre);
     const apellidosConNumeros = /\d/.test(formData.apellidos);
+    const provinciaConNumeros = /\d/.test(formData.provincia);
+    const cantonConNumeros = /\d/.test(formData.canton);
+    const distritoConNumeros = /\d/.test(formData.distrito);
+    
 
-    if (nombreConNumeros || apellidosConNumeros) {
+    if (nombreConNumeros || apellidosConNumeros || provinciaConNumeros || cantonConNumeros || distritoConNumeros) {
       Alert.alert(
         'Datos inválidos',
         'Los campos Nombre y Apellidos no pueden contener números'

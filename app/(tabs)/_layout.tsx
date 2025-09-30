@@ -60,6 +60,17 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
         }}
       />
+
+{/* ✅ Esta línea debe estar DENTRO del <Tabs> */}
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: 'Comunidad',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.2.fill" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

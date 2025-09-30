@@ -23,7 +23,7 @@ export default function RootLayout() {
       <Stack>
 
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="community" options={{ headerShown: false }} />
 
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />

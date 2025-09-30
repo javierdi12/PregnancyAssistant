@@ -10,6 +10,9 @@ interface ProfileFormProps {
     nombre: string;
     apellidos: string;
     fechaNacimiento: string;
+    provincia: string;
+    canton: string;
+    distrito: string;
   };
   edad: number | null;
   showDatePicker: boolean;
@@ -94,6 +97,41 @@ export const ProfileForm = ({
           <View style={styles.inputRow}>
             <Text style={styles.label}>Edad:</Text>
             <Text style={styles.ageText}>{edad !== null ? edad : ''}</Text>
+          </View>
+         {/* Provincia */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Provincia:</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.provincia}
+              onChangeText={(value) => onInputChange('provincia', value)}
+              placeholder="Provincia"
+              placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+            />
+          </View>
+
+          {/* Cantón */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Cantón:</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.canton}
+              onChangeText={(value) => onInputChange('canton', value)}
+              placeholder="Cantón"
+              placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+            />
+          </View>
+
+          {/* Distrito */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Distrito:</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.distrito}
+              onChangeText={(value) => onInputChange('distrito', value)}
+              placeholder="Distrito"
+              placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+            />
           </View>
         </View>
 
