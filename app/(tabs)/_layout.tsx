@@ -24,40 +24,52 @@ export default function TabLayout() {
           },
           default: {},
         }),
+        tabBarShowLabel: false,
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />
         }}
       />
       <Tabs.Screen
         name="ai-assistant"
         options={{
           title: 'AI Assistant',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Mi Perfil',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="sparkles" color={color} />
         }}
       />
       <Tabs.Screen
         name="tracking"
         options={{
           title: 'Tracking',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="chart.bar.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="ellipsis" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Mapa',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="privacy"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
