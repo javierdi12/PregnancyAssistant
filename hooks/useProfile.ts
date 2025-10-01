@@ -132,10 +132,9 @@ export const useProfile = () => {
 
     setSaving(true);
     try {
-      const displayName = `${formData.nombre} ${formData.apellidos}`;
       await setDoc(
         doc(db, 'users', user.uid),
-        { ...formData, edad, displayName, lastUpdated: new Date() },
+        { ...formData, edad, lastUpdated: new Date() },
         { merge: true }
       );
       await AsyncStorage.setItem('profile_completed', 'true');
