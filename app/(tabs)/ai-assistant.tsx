@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
 
-// The api
+// The api hi
 const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; 
 
 
