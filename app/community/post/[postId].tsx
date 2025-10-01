@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Modal } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
@@ -335,7 +335,7 @@ export default function PostDetailScreen() {
           { text: "Cancelar", style: "cancel" },
           {
             text: "Editar", 
-            onPress: () => setEditingComment({ id: item.id, text: item.text }) 
+            onPress: () => setEditingComment({ id: item.id, text: item.text })
           },
           {
             text: "Eliminar",
@@ -391,57 +391,51 @@ export default function PostDetailScreen() {
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <Stack.Screen options={{ title: 'Publicación' }} />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={90} // Adjust this value as needed
-      >
-        <FlatList
-          ListHeaderComponent={() => {
-            const isPostAuthor = auth.currentUser?.uid === post.userId;
-            return (
-              <View style={[styles.postContainer, { backgroundColor: cardColor, borderColor: borderColor }]}>
-                <View style={styles.postHeader}>
-                  <ThemedText type="subtitle">{postAuthor || 'Cargando...'}</ThemedText>
-                  {isPostAuthor && (
-                    <TouchableOpacity onPress={showPostActions}>
-                      <Feather name="more-horizontal" size={20} color={iconColor} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <ThemedText style={styles.postText}>{post.text}</ThemedText>
-                {post.imageUrl && <Image source={{ uri: post.imageUrl }} style={styles.postImage} />}
-                <View style={[styles.postActions, { borderTopColor: borderColor }]}>
-                  <TouchableOpacity onPress={handleLikeToggle} style={styles.actionButton}>
-                    <ThemedText style={{ color: isLiked ? dangerColor : iconColor }}>❤️ {post.likesCount}</ThemedText>
+      <FlatList
+        ListHeaderComponent={() => {
+          const isPostAuthor = auth.currentUser?.uid === post.userId;
+          return (
+            <View style={[styles.postContainer, { backgroundColor: cardColor, borderColor: borderColor }]}>
+              <View style={styles.postHeader}>
+                <ThemedText type="subtitle">{postAuthor || 'Cargando...'}</ThemedText>
+                {isPostAuthor && (
+                  <TouchableOpacity onPress={showPostActions}>
+                    <Feather name="more-horizontal" size={20} color={iconColor} />
                   </TouchableOpacity>
-                  <ThemedText style={styles.actionButton}>💬 {post.commentsCount}</ThemedText>
-                </View>
-                <ThemedText style={[styles.postTimestamp, { color: iconColor }]}>
-                  {timeAgo(post.createdAt)}
-                </ThemedText>
-                <ThemedText type="subtitle" style={[styles.commentsTitle, { borderTopColor: borderColor, color: tintColor }]}>Comentarios</ThemedText>
+                )}
               </View>
-            );
-          }}
-          data={comments}
-          renderItem={renderComment}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+              <ThemedText style={styles.postText}>{post.text}</ThemedText>
+              {post.imageUrl && <Image source={{ uri: post.imageUrl }} style={styles.postImage} />}
+              <View style={[styles.postActions, { borderTopColor: borderColor }]}>
+                <TouchableOpacity onPress={handleLikeToggle} style={styles.actionButton}>
+                  <ThemedText style={{ color: isLiked ? dangerColor : iconColor }}>❤️ {post.likesCount}</ThemedText>
+                </TouchableOpacity>
+                <ThemedText style={styles.actionButton}>💬 {post.commentsCount}</ThemedText>
+              </View>
+              <ThemedText style={[styles.postTimestamp, { color: iconColor }]}>
+                {timeAgo(post.createdAt)}
+              </ThemedText>
+              <ThemedText type="subtitle" style={[styles.commentsTitle, { borderTopColor: borderColor, color: tintColor }]}>Comentarios</ThemedText>
+            </View>
+          );
+        }}
+        data={comments}
+        renderItem={renderComment}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+      />
+      <View style={[styles.commentInputContainer, { backgroundColor: backgroundColor, borderTopColor: borderColor }]}>
+        <TextInput
+          style={[styles.commentInput, { borderColor: borderColor, color: textColor }]}
+          placeholder="Añadir un comentario..."
+          value={newCommentText}
+          onChangeText={setNewCommentText}
+          placeholderTextColor={placeholderColor}
         />
-        <View style={[styles.commentInputContainer, { backgroundColor: backgroundColor, borderTopColor: borderColor }]}>
-          <TextInput
-            style={[styles.commentInput, { borderColor: borderColor, color: textColor }]}
-            placeholder="Añadir un comentario..."
-            value={newCommentText}
-            onChangeText={setNewCommentText}
-            placeholderTextColor={placeholderColor}
-          />
-          <TouchableOpacity style={[styles.sendButton, { backgroundColor: tintColor }]} onPress={handleAddComment}>
-            <Feather name="send" size={18} color="white" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <TouchableOpacity style={[styles.sendButton, { backgroundColor: tintColor }]} onPress={handleAddComment}>
+          <Feather name="send" size={18} color="white" />
+        </TouchableOpacity>
+      </View>
 
       {/* Edit Comment Modal */}
       <Modal
@@ -468,7 +462,7 @@ export default function PostDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: dangerColor }]}
-                onPress={() => setEditingPost(null)}
+                onPress={() => setEditingComment(null)}
               >
                 <ThemedText style={styles.buttonText}>Cancelar</ThemedText>
               </TouchableOpacity>
@@ -495,13 +489,13 @@ export default function PostDetailScreen() {
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: tintColor }]} 
+                style={[styles.button, { backgroundColor: tintColor }]}
                 onPress={handleUpdatePost}
               >
                 <ThemedText style={styles.buttonText}>Guardar</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: dangerColor }]} 
+                style={[styles.button, { backgroundColor: dangerColor }]}
                 onPress={() => setEditingPost(null)}
               >
                 <ThemedText style={styles.buttonText}>Cancelar</ThemedText>
@@ -594,7 +588,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 8,
     borderTopWidth: 1,
-    marginBottom: 20,
   },
   commentInput: {
     flex: 1,

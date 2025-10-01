@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 };
 
-// Initialize Firebase app
+// Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 
 // Initialize Auth with persistence
