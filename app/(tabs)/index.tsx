@@ -88,13 +88,6 @@ export default function HomeScreen() {
             <Feather name="user" size={24} color={styles.quickActionButtonText.color} />
             <ThemedText style={styles.quickActionButtonText}>Profile</ThemedText>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/privacy')}>
-            <Feather name="shield" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Privacy</ThemedText>
-          </TouchableOpacity>
         </View>
 
         {/* Sign Out Button */}

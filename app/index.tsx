@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to store data locally
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
@@ -7,7 +7,7 @@ import {
   signInWithCredential,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import React, { useEffect, useRef, useState } from 'react'; // Import React and necessary hooks
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,10 +20,10 @@ import {
   View,
   useColorScheme
 } from 'react-native';
-import { auth } from '../FireBase'; // Import Firebase authentication instance
-import { getLoginStyles } from '../styles/login'; // Import styles for the component
-
-const FACEBOOK_APP_ID = '1892374498008258'; // Facebook app ID
+import { FACEBOOK_APP_ID } from '../constants/AuthFace';
+import { auth } from '../FireBase';
+import { getLoginStyles } from '../styles/login';
+import { getFirebaseErrorMessage, isValidEmail } from '../utils/firebaseError';
 
 // Definir tipos para los intervalos
 type IntervalHandle = ReturnType<typeof setInterval>;
@@ -33,7 +33,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAuth, setActiveAuth] = useState<'none' | 'email' | 'google' | 'facebook'>('none'); // Status for active authentication type
+  const [activeAuth, setActiveAuth] = useState<'none' | 'email' | 'google' | 'facebook'>('none');
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const isMountedRef = useRef(true);
@@ -56,7 +56,7 @@ export default function LoginScreen() {
   useEffect(() => {
     isMountedRef.current = true;
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {  // Listens for changes in authentication status
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user && isMountedRef.current) {
         const termsAccepted = await checkTermsAccepted();
 
@@ -88,7 +88,7 @@ export default function LoginScreen() {
     }
   };
 
-  const signIn = async () => { // Function to log in with email and password
+  const signIn = async () => {
     safeSetIsLoading(true);
     if (!email || !password) {
       Alert.alert('Campos requeridos', 'Por favor, ingresa tu correo y contraseña.');
@@ -109,7 +109,6 @@ export default function LoginScreen() {
         }
       }
     } catch (error) {
-      
       const errorMsg = getFirebaseErrorMessage(error);
       Alert.alert('Error', errorMsg);
     } finally {
@@ -174,7 +173,6 @@ export default function LoginScreen() {
         await handleFacebookWebLogin();
       } else {
         Alert.alert(
-          // Mobile login via redirection
           'Login con Facebook',
           'Para iOS y Android, necesitamos redirigirte al navegador para completar el login. ¿Quieres continuar?',
           [
@@ -197,13 +195,13 @@ export default function LoginScreen() {
     }
   };
 
-  const handleFacebookMobileRedirect = () => {  // Function to redirect to Facebook OAuth on mobile
+  const handleFacebookMobileRedirect = () => {
     const redirectUri = `https://${window.location.hostname || 'localhost'}`;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
     window.location.href = authUrl;
   };
 
-  const handleFacebookWebLogin = async () => {  // Function to log in with Facebook on the web using a popup
+  const handleFacebookWebLogin = async () => {
     const redirectUri = window.location.origin;
     const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
 
@@ -230,7 +228,7 @@ export default function LoginScreen() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-    intervalRef.current = setInterval(() => {  // Interval to check if popup closed or has token
+    intervalRef.current = setInterval(() => {
       try {
         if (!isMountedRef.current) {
           if (intervalRef.current) clearInterval(intervalRef.current);
@@ -276,7 +274,7 @@ export default function LoginScreen() {
       }
     }, 100) as unknown as IntervalHandle;
 
-    timeoutRef.current = setTimeout(() => {  // Timeout to close popup if too much time passes
+    timeoutRef.current = setTimeout(() => {
       if (!popupClosed && isMountedRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (popup && !popup.closed) {
@@ -288,7 +286,7 @@ export default function LoginScreen() {
     }, 120000) as unknown as TimeoutHandle;
   };
 
-  const fetchFacebookUserInfo = async (accessToken: string) => {   // Function to obtain Facebook user information
+  const fetchFacebookUserInfo = async (accessToken: string) => {
     try {
       const response = await fetch(
         `https://graph.facebook.com/v17.0/me?fields=id,name,email&access_token=${accessToken}`
@@ -300,7 +298,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleFacebookToken = async (token: string) => { // Function to manage Facebook token and authentication with Firebase
+  const handleFacebookToken = async (token: string) => {
     try {
       const userInfo = await fetchFacebookUserInfo(token);
 
@@ -453,43 +451,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-// Function to validate email format
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// Function to map Firebase errors to user-friendly messages
-function getFirebaseErrorMessage(error: any): string {
-  
-  // Itry to get code directly
-  let code = error?.code;
-
-  //obtain code from customData if not present
-  if (!code && error?.customData?._tokenResponse?.error?.message) {
-    const apiMsg = error.customData._tokenResponse.error.message;
-    // mapping 
-    if (apiMsg === "EMAIL_EXISTS") code = "auth/email-already-in-use";
-    if (apiMsg === "EMAIL_NOT_FOUND") code = "auth/user-not-found";
-    if (apiMsg === "INVALID_PASSWORD") code = "auth/wrong-password";
-    if (apiMsg === "WEAK_PASSWORD") code = "auth/weak-password";
-
-  }
-
-  // amigable message
-  switch (code) {
-    case 'auth/email-already-in-use':
-      return "El correo ya está registrado. Intenta iniciar sesión o usa otro correo.";
-    case 'auth/weak-password':
-      return "La contraseña es muy débil. Usa al menos 6 caracteres.";
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return "Correo o contraseña incorrectos. Intenta de nuevo.";
-    case 'auth/invalid-email':
-      return "El formato del correo es inválido.";
-    default:
-      return "Ocurrió un error inesperado: " + (error?.message ?? "Desconocido");
-  }
-}
-
