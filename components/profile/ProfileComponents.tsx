@@ -1,8 +1,21 @@
+import { Canton, District, Province } from '@/services/locationService';
 import { getProfileStyles } from '@/styles/profile';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+
 
 interface ProfileFormProps {
   theme: 'light' | 'dark';
@@ -10,15 +23,34 @@ interface ProfileFormProps {
     nombre: string;
     apellidos: string;
     fechaNacimiento: string;
+    provincia?: string;
+    canton?: string;
+    distrito?: string;
   };
   edad: number | null;
   showDatePicker: boolean;
+  showProvincePicker: boolean;
+  showCantonPicker: boolean;
+  showDistrictPicker: boolean;
   saving: boolean;
+  photoURL: string | null;
+  uploadingPhoto: boolean;
+  provinces: Province[];
+  cantons: Canton[];
+  districts: District[];
+  loadingLocations: boolean;
   onInputChange: (field: string, value: string) => void;
   onDateChange: (event: any, selectedDate?: Date) => void;
+  onProvinceSelect: (province: Province) => void;
+  onCantonSelect: (canton: Canton) => void;
+  onDistrictSelect: (district: District) => void;
   onSave: () => void;
   onShowDatePicker: (show: boolean) => void;
+  onShowProvincePicker: (show: boolean) => void;
+  onShowCantonPicker: (show: boolean) => void;
+  onShowDistrictPicker: (show: boolean) => void;
   formatDate: (dateString: string) => string;
+  onPhotoChange: () => void;
 }
 
 export const ProfileForm = ({
@@ -26,18 +58,135 @@ export const ProfileForm = ({
   formData,
   edad,
   showDatePicker,
+  showProvincePicker,
+  showCantonPicker,
+  showDistrictPicker,
   saving,
+  photoURL,
+  uploadingPhoto,
+  provinces,
+  cantons,
+  districts,
+  loadingLocations,
   onInputChange,
   onDateChange,
+  onProvinceSelect,
+  onCantonSelect,
+  onDistrictSelect,
   onSave,
   onShowDatePicker,
+  onShowProvincePicker,
+  onShowCantonPicker,
+  onShowDistrictPicker,
   formatDate,
+  onPhotoChange,
 }: ProfileFormProps) => {
   const styles = getProfileStyles(theme);
   const router = useRouter();
 
   const navigateToHelpCenter = () => router.push('/help-center');
   const navigateToContact = () => router.push('/contact');
+
+  const renderProvinceItem = ({ item }: { item: Province }) => (
+    <TouchableOpacity
+      style={styles.locationItem}
+      onPress={() => onProvinceSelect(item)}
+    >
+      <Text style={[
+        styles.locationItemText,
+        formData.provincia === item.name && styles.selectedLocationText
+      ]}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderCantonItem = ({ item }: { item: Canton }) => (
+    <TouchableOpacity
+      style={styles.locationItem}
+      onPress={() => onCantonSelect(item)}
+    >
+      <Text style={[
+        styles.locationItemText,
+        formData.canton === item.name && styles.selectedLocationText
+      ]}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderDistrictItem = ({ item }: { item: District }) => (
+    <TouchableOpacity
+      style={styles.locationItem}
+      onPress={() => onDistrictSelect(item)}
+    >
+      <Text style={[
+        styles.locationItemText,
+        formData.distrito === item.name && styles.selectedLocationText
+      ]}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const LocationPickerModal = ({ 
+    visible, 
+    title, 
+    data, 
+    loading, 
+    onClose, 
+    renderItem 
+  }: {
+    visible: boolean;
+    title: string;
+    data: any[];
+    loading: boolean;
+    onClose: () => void;
+    renderItem: any;
+  }) => (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[
+          styles.modalContent,
+          { backgroundColor: theme === 'dark' ? '#1e1e1e' : '#fff' }
+        ]}>
+          <Text style={[
+            styles.modalTitle,
+            { color: theme === 'dark' ? '#fff' : '#000' }
+          ]}>
+            {title}
+          </Text>
+          
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3b82f6" />
+              <Text style={styles.loadingText}>Cargando...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={data}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              style={styles.locationList}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+          
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={onClose}
+          >
+            <Text style={styles.modalCloseText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,6 +195,34 @@ export const ProfileForm = ({
           <Text style={styles.title}>Detalles de la cuenta</Text>
         </View>
 
+        {/* Foto de perfil */}
+        <View style={styles.profilePhotoSection}>
+          <View style={styles.profilePhotoContainer}>
+            <Image
+              source={
+                photoURL 
+                  ? { uri: photoURL }
+                  : require('@/assets/images/default-avatar.png')
+              }
+              style={styles.profilePhoto}
+            />
+            <TouchableOpacity 
+              style={styles.changePhotoButton}
+              onPress={onPhotoChange}
+              disabled={uploadingPhoto}
+            >
+              {uploadingPhoto ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.changePhotoText}>+</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.photoPlaceholderText}>
+            {uploadingPhoto ? 'Subiendo foto...' : 'Toca para cambiar foto'}
+          </Text>
+        </View>
+        
         <View style={styles.formSection}>
           {/* Nombre */}
           <View style={styles.inputRow}>
@@ -54,7 +231,7 @@ export const ProfileForm = ({
               style={styles.input}
               value={formData.nombre}
               onChangeText={(value) => onInputChange('nombre', value)}
-              placeholder="Escribe aqui.."
+              placeholder="Escribe aquí..."
               placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
             />
           </View>
@@ -74,14 +251,23 @@ export const ProfileForm = ({
           {/* Fecha de nacimiento */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Fecha de nacimiento:</Text>
-            <TouchableOpacity style={styles.dateButton} onPress={() => onShowDatePicker(true)}>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => onShowDatePicker(true)}
+            >
               <Text style={styles.dateText}>
-                {formData.fechaNacimiento ? formatDate(formData.fechaNacimiento) : 'Seleccionar fecha'}
+                {formData.fechaNacimiento
+                  ? formatDate(formData.fechaNacimiento)
+                  : 'Seleccionar fecha'}
               </Text>
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
-                value={formData.fechaNacimiento ? new Date(formData.fechaNacimiento) : new Date()}
+                value={
+                  formData.fechaNacimiento
+                    ? new Date(formData.fechaNacimiento)
+                    : new Date()
+                }
                 mode="date"
                 display="default"
                 onChange={onDateChange}
@@ -93,9 +279,98 @@ export const ProfileForm = ({
           {/* Edad */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Edad:</Text>
-            <Text style={styles.ageText}>{edad !== null ? edad : ''}</Text>
+            <Text style={styles.ageText}>
+              {edad !== null ? edad : ''}
+            </Text>
+          </View>
+
+          {/* Provincia */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Provincia:</Text>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => onShowProvincePicker(true)}
+            >
+              <Text style={styles.dateText}>
+                {formData.provincia || 'Seleccionar provincia'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Cantón */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Cantón:</Text>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => {
+                if (!formData.provincia) {
+                  alert('Por favor selecciona una provincia primero');
+                  return;
+                }
+                onShowCantonPicker(true);
+              }}
+              disabled={!formData.provincia}
+            >
+              <Text style={[
+                styles.dateText,
+                !formData.provincia && styles.disabledText
+              ]}>
+                {formData.canton || 'Seleccionar cantón'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Distrito */}
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>Distrito:</Text>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => {
+                if (!formData.canton) {
+                  alert('Por favor selecciona un cantón primero');
+                  return;
+                }
+                onShowDistrictPicker(true);
+              }}
+              disabled={!formData.canton}
+            >
+              <Text style={[
+                styles.dateText,
+                !formData.canton && styles.disabledText
+              ]}>
+                {formData.distrito || 'Seleccionar distrito'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Modales para selección de ubicación */}
+        <LocationPickerModal
+          visible={showProvincePicker}
+          title="Seleccionar Provincia"
+          data={provinces}
+          loading={loadingLocations}
+          onClose={() => onShowProvincePicker(false)}
+          renderItem={renderProvinceItem}
+        />
+
+        <LocationPickerModal
+          visible={showCantonPicker}
+          title="Seleccionar Cantón"
+          data={cantons}
+          loading={loadingLocations}
+          onClose={() => onShowCantonPicker(false)}
+          renderItem={renderCantonItem}
+        />
+
+        <LocationPickerModal
+          visible={showDistrictPicker}
+          title="Seleccionar Distrito"
+          data={districts}
+          loading={loadingLocations}
+          onClose={() => onShowDistrictPicker(false)}
+          renderItem={renderDistrictItem}
+        />
 
         {/* Divider */}
         <View style={styles.divider} />

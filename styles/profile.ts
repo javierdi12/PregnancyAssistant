@@ -14,11 +14,51 @@ export const getProfileStyles = (theme: 'light' | 'dark') =>
     header: {
       padding: 20,
       paddingBottom: 10,
+      alignItems: 'center',
     },
     title: {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme === 'dark' ? '#fff' : '#1f2937',
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    profilePhotoSection: {
+      alignItems: 'center',
+      marginBottom: 30,
+    },
+    profilePhotoContainer: {
+      position: 'relative',
+      marginBottom: 10,
+    },
+    profilePhoto: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      borderWidth: 3,
+      borderColor: theme === 'dark' ? '#3b82f6' : '#1e40af',
+    },
+    changePhotoButton: {
+      position: 'absolute',
+      bottom: 5,
+      right: 5,
+      backgroundColor: theme === 'dark' ? '#3b82f6' : '#1e40af',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: theme === 'dark' ? '#121212' : '#fff',
+    },
+    changePhotoText: {
+      color: '#fff',
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    photoPlaceholderText: {
+      fontSize: 14,
+      color: theme === 'dark' ? '#ccc' : '#666',
       textAlign: 'center',
     },
     formSection: {
@@ -54,11 +94,74 @@ export const getProfileStyles = (theme: 'light' | 'dark') =>
       color: theme === 'dark' ? '#ddd' : '#6b7280',
       textAlign: 'right',
     },
+    disabledText: {
+      color: theme === 'dark' ? '#666' : '#ccc',
+    },
     ageText: {
       fontSize: 16,
       color: theme === 'dark' ? '#ddd' : '#6b7280',
       textAlign: 'right',
       flex: 1,
+    },
+    // Estilos para modales de ubicación
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+      width: '85%',
+      maxHeight: '70%',
+      borderRadius: 12,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 15,
+      textAlign: 'center',
+    },
+    locationList: {
+      maxHeight: 400,
+    },
+    locationItem: {
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: theme === 'dark' ? '#333' : '#e5e7eb',
+    },
+    locationItemText: {
+      fontSize: 16,
+      color: theme === 'dark' ? '#fff' : '#000',
+    },
+    selectedLocationText: {
+      color: '#3b82f6',
+      fontWeight: 'bold',
+    },
+    modalCloseButton: {
+      marginTop: 15,
+      padding: 12,
+      backgroundColor: theme === 'dark' ? '#3b82f6' : '#1e40af',
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    modalCloseText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    loadingText: {
+      marginTop: 10,
+      textAlign: 'center',
+      color: theme === 'dark' ? '#fff' : '#000',
     },
     divider: {
       height: 1,
