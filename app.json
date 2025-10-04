@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "La app necesita acceder a tu ubicación para mostrar provincia, cantón y distrito."
+        "NSLocationWhenInUseUsageDescription": "La app necesita acceder a tu ubicación para mostrar provincia, cantón y distrito.",
+        "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para que puedas cambiar tu foto de perfil."
       }
     },
     "android": {
@@ -23,7 +24,9 @@
       "package": "com.preganassist.PregnancyAssistant",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -48,8 +51,16 @@
         {
           "locationAlwaysAndWhenInUsePermission": "La app necesita acceder a tu ubicación para mostrar provincia, cantón y distrito."
         }
+      ],
+    [
+        "expo-image-picker",
+        {
+          "photosPermission": "La aplicación necesita acceso a tus fotos para que puedas cambiar tu foto de perfil.",
+          "cameraPermission": "La aplicación necesita acceso a la cámara para tomar fotos de perfil."
+        }
       ]
     ],
+    
     "experiments": {
       "typedRoutes": true
     }

@@ -10,13 +10,29 @@ export default function ProfileScreen() {
     formData,
     edad,
     showDatePicker,
+    showProvincePicker,
+    showCantonPicker,
+    showDistrictPicker,
     loading,
     saving,
+    photoURL,
+    uploadingPhoto,
+    provinces,
+    cantons,
+    districts,
+    loadingLocations,
     handleInputChange,
     handleDateChange,
+    handleProvinceSelect,
+    handleCantonSelect,
+    handleDistrictSelect,
     handleSave,
     setShowDatePicker,
+    setShowProvincePicker,
+    setShowCantonPicker,
+    setShowDistrictPicker,
     formatDate,
+    handlePhotoChange,
   } = useProfile();
 
   if (loading) {
@@ -29,12 +45,28 @@ export default function ProfileScreen() {
       formData={formData}
       edad={edad}
       showDatePicker={showDatePicker}
+      showProvincePicker={showProvincePicker}
+      showCantonPicker={showCantonPicker}
+      showDistrictPicker={showDistrictPicker}
       saving={saving}
+      photoURL={photoURL}
+      uploadingPhoto={uploadingPhoto}
+      provinces={provinces}
+      cantons={cantons}
+      districts={districts}
+      loadingLocations={loadingLocations}
       onInputChange={handleInputChange}
       onDateChange={handleDateChange}
+      onProvinceSelect={handleProvinceSelect}
+      onCantonSelect={handleCantonSelect}
+      onDistrictSelect={handleDistrictSelect}
       onSave={handleSave}
       onShowDatePicker={setShowDatePicker}
+      onShowProvincePicker={setShowProvincePicker}
+      onShowCantonPicker={setShowCantonPicker}
+      onShowDistrictPicker={setShowDistrictPicker}
       formatDate={formatDate}
+      onPhotoChange={handlePhotoChange}
     />
   );
 }
