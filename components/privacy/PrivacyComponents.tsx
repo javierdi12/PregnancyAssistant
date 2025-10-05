@@ -3,15 +3,16 @@ import { ThemedView } from '@/components/ThemedView';
 import { getPrivacyStyles } from '@/styles/privacy';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import {
-    Modal,
-    Platform,
-    ScrollView,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Switch } from 'react-native-switch';
 
-
+// Textos estáticos (solo los de la UI)
 const PRIVACY_TEXTS = {
   title: 'Hablemos de privacidad',
   dataUsage: 'Acepto el uso de mis datos de la aplicación (incluido mi estado de embarazo) para recibir servicios en la aplicación.',
@@ -22,21 +23,7 @@ const PRIVACY_TEXTS = {
   continue: 'Continuar',
   back: 'Atrás',
   modalTitle: 'Política de Privacidad',
-  close: 'Cerrar',
-  modalContent: `1. Recopilación de datos
-Recopilamos únicamente los datos necesarios para brindarte nuestros servicios, como información sobre tu estado de embarazo, preferencias y uso de la aplicación. No compartimos tus datos con terceros sin tu consentimiento.
-
-2. Uso de la información
-La información recopilada se utiliza exclusivamente para mejorar la experiencia dentro de la aplicación, ofrecer contenidos personalizados y enviarte notificaciones relevantes. La publicidad personalizada es opcional y puedes activarla o desactivarla en cualquier momento.
-
-3. Seguridad de los datos
-Todos los datos sensibles se almacenan de manera segura.
-
-4. Acceso y control
-Tienes derecho a acceder, corregir tus datos personales en cualquier momento. Puedes hacerlo desde la configuración de tu cuenta.
-
-5. Actualizaciones de la política
-Podemos actualizar esta política para mejorar la seguridad o cumplir con nuevas regulaciones. Te notificaremos sobre cambios importantes y siempre tendrás acceso a la versión actualizada dentro de la aplicación.`
+  close: 'Cerrar'
 };
 
 interface PrivacyHeaderProps {
@@ -199,9 +186,17 @@ interface PrivacyModalProps {
   isDark: boolean;
   showPrivacyModal: boolean;
   onCloseModal: () => void;
+  privacyContent: string;
+  loading?: boolean;
 }
 
-export const PrivacyModal = ({ isDark, showPrivacyModal, onCloseModal }: PrivacyModalProps) => {
+export const PrivacyModal = ({ 
+  isDark, 
+  showPrivacyModal, 
+  onCloseModal, 
+  privacyContent,
+  loading = false
+}: PrivacyModalProps) => {
   const styles = getPrivacyStyles(isDark);
 
   if (!showPrivacyModal) return null;
@@ -218,11 +213,22 @@ export const PrivacyModal = ({ isDark, showPrivacyModal, onCloseModal }: Privacy
           <ThemedText style={styles.modalTitle}>
             {PRIVACY_TEXTS.modalTitle}
           </ThemedText>
-          <ScrollView>
-            <ThemedText style={styles.modalText}>
-              {PRIVACY_TEXTS.modalContent}
-            </ThemedText>
-          </ScrollView>
+          
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#06B6D4" />
+              <ThemedText style={styles.loadingText}>
+                Cargando política de privacidad...
+              </ThemedText>
+            </View>
+          ) : (
+            <ScrollView>
+              <ThemedText style={styles.modalText}>
+                {privacyContent}
+              </ThemedText>
+            </ScrollView>
+          )}
+          
           <TouchableOpacity
             style={styles.closeButton}
             onPress={onCloseModal}

@@ -6,6 +6,8 @@ import {
   PrivacyModal,
 } from '@/components/privacy/PrivacyComponents';
 import { usePrivacy } from '@/hooks/usePrivacy';
+import { usePrivacyPolicy } from '@/hooks/usePrivacyPolicy';
+import { router } from 'expo-router';
 import { StatusBar, useColorScheme } from 'react-native';
 
 export default function PrivacyScreen() {
@@ -24,11 +26,23 @@ export default function PrivacyScreen() {
     handleContinue,
   } = usePrivacy();
 
+  // Obtener el contenido de la política desde Firebase
+  const { privacyContent, loading } = usePrivacyPolicy();
+
+  // Función para manejar el botón de retroceso
+   const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/'); 
+    }
+  };
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent />
       
-      <PrivacyHeader isDark={isDark} onBack={() => window.history.back()} />
+      <PrivacyHeader isDark={isDark} onBack={handleBack} />
       
       <PrivacyContent
         isDark={isDark}
@@ -46,6 +60,8 @@ export default function PrivacyScreen() {
         isDark={isDark}
         showPrivacyModal={showPrivacyModal}
         onCloseModal={() => setShowPrivacyModal(false)}
+        privacyContent={privacyContent}
+        loading={loading}
       />
       
       <HomeIndicator isDark={isDark} />
