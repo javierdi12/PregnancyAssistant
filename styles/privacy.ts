@@ -170,4 +170,17 @@ export const getPrivacyStyles = (isDark: boolean) =>
       color: '#fff',
       fontWeight: '600',
     },
+    // Nuevos estilos para el loading
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 40,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      textAlign: 'center',
+      color: isDark ? '#d1d5db' : '#4b5563',
+    },
   });
