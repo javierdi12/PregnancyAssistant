@@ -89,17 +89,21 @@ export default function ForumDetailScreen() {
   }, [forumId]);
 
   const renderPost = ({ item }: { item: Post }) => (
-    <Link href={`/community/post/${item.id}`} asChild>
-      <TouchableOpacity style={[styles.postItem, { backgroundColor: cardBackgroundColor, borderColor: borderColor }]}>
+    <View style={[styles.postItem, { backgroundColor: cardBackgroundColor, borderColor: borderColor }]}>
+      <TouchableOpacity onPress={() => router.push(`/profile/${item.userId}`)}>
         <ThemedText type="subtitle">{item.username}</ThemedText>
-        <ThemedText>{item.text}</ThemedText>
-        {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.postImage} />}
-        <View style={styles.postActions}>
-          <ThemedText>❤️ {item.likesCount}</ThemedText>
-          <ThemedText>💬 {item.commentsCount}</ThemedText>
-        </View>
       </TouchableOpacity>
-    </Link>
+      
+      <TouchableOpacity onPress={() => router.push(`/community/post/${item.id}`)}>
+        <ThemedText style={{marginTop: 8}}>{item.text}</ThemedText>
+        {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.postImage} />}
+      </TouchableOpacity>
+
+      <View style={styles.postActions}>
+        <ThemedText>❤️ {item.likesCount}</ThemedText>
+        <ThemedText>💬 {item.commentsCount}</ThemedText>
+      </View>
+    </View>
   );
 
   if (loading) {
