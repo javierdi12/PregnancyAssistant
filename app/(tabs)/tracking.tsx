@@ -10,9 +10,11 @@ import {
   Text,
   View,
   useColorScheme,
+  Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { onAuthStateChanged } from 'firebase/auth';
+import * as NotificationService from '../../services/notificationService';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -64,7 +66,7 @@ export default function TrackingScreen() {
   const [userId, setUserId] = useState<string | null>(null);
 
   // State for Fetal Development
-  const [lmp, setLmp] = useState<Date | null>(null); // Last Menstrual Period
+  const [lmp, setLmp] = useState<Date | null>(null);
   const [currentWeek, setCurrentWeek] = useState<number | null>(null);
   const [showLmpPicker, setShowLmpPicker] = useState(false);
 
@@ -78,32 +80,35 @@ export default function TrackingScreen() {
   const [symptomsList, setSymptomsList] = useState<Symptom[]>([]);
 
   // State for Appointments
-  const [appointmentDate, setAppointmentDate] = useState<string>('');
-  const [appointmentTime, setAppointmentTime] = useState<string>('');
+  const [appointmentDateTime, setAppointmentDateTime] = useState(new Date());
   const [appointmentNotes, setAppointmentNotes] = useState<string>('');
   const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
+  const [showAppointmentDatePicker, setShowAppointmentDatePicker] = useState(false);
+  const [showAppointmentTimePicker, setShowAppointmentTimePicker] = useState(false);
 
   // Loading state
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Request notification permissions when the component mounts
+  useEffect(() => {
+    NotificationService.requestNotificationPermissions();
+  }, []);
 
   // Listen for auth changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log(`[Auth] User detected: ${user.uid}`);
         setUserId(user.uid);
       } else {
-        console.log('[Auth] No user detected.');
         setUserId(null);
       }
     });
-    return () => unsubscribe(); // Cleanup on unmount
+    return () => unsubscribe();
   }, []);
 
   // Fetch data when userId is available
   useEffect(() => {
     if (!userId) {
-      // Clear all data and stop loading if user logs out
       setLmp(null);
       setVitalsList([]);
       setSymptomsList([]);
@@ -112,54 +117,39 @@ export default function TrackingScreen() {
       return;
     }
 
-    console.log(`[Data] Setting up listeners for userId: ${userId}`);
     setLoading(true);
-
-    // --- Setup listeners for user-specific data ---
     const userDocRef = doc(db, 'users', userId);
 
-    // 1. Fetch LMP (one-time fetch)
     getDoc(userDocRef)
       .then(docSnap => {
-        console.log('[Data] LMP document snapshot received.');
         if (docSnap.exists() && docSnap.data().lmp) {
-          console.log('[Data] LMP found in document:', docSnap.data().lmp.toDate());
           setLmp(docSnap.data().lmp.toDate());
         } else {
-          console.log('[Data] LMP not found for this user.');
-          setLmp(null); // Clear LMP if not found for this user
+          setLmp(null);
         }
       })
       .catch(error => console.error("Error fetching LMP: ", error))
-      .finally(() => setLoading(false)); // Stop loading after LMP is checked
+      .finally(() => setLoading(false));
 
-    // 2. Listen for vitals changes
     const vitalsQuery = query(collection(db, 'users', userId, 'vitals'), orderBy('createdAt', 'desc'));
     const unsubscribeVitals = onSnapshot(vitalsQuery, (snapshot) => {
       const vitalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vitals));
-      console.log('[Data] Vitals received:', vitalsData);
       setVitalsList(vitalsData);
     });
 
-    // 3. Listen for symptoms changes
     const symptomsQuery = query(collection(db, 'users', userId, 'symptoms'), orderBy('createdAt', 'desc'));
     const unsubscribeSymptoms = onSnapshot(symptomsQuery, (snapshot) => {
       const symptomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Symptom));
-      console.log('[Data] Symptoms received:', symptomsData);
       setSymptomsList(symptomsData);
     });
 
-    // 4. Listen for appointments changes
     const appointmentsQuery = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
     const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
       const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
-      console.log('[Data] Appointments received:', appointmentsData);
       setAppointmentsList(appointmentsData);
     });
 
-    // Return a cleanup function to unsubscribe from listeners on unmount
     return () => {
-      console.log(`[Data] Cleaning up listeners for userId: ${userId}`);
       unsubscribeVitals();
       unsubscribeSymptoms();
       unsubscribeAppointments();
@@ -179,7 +169,7 @@ export default function TrackingScreen() {
       const currentWeekNumber = Math.floor(diffDays / 7);
       setCurrentWeek(currentWeekNumber);
     } else {
-      setCurrentWeek(null); // Clear week if LMP is cleared
+      setCurrentWeek(null);
     }
   }, [lmp]);
 
@@ -197,16 +187,30 @@ export default function TrackingScreen() {
     }
   };
 
-  const handleSaveVitals = async () => {
-    if (!userId) {
-      Alert.alert('Error', 'No user ID found. Cannot save.');
-      return;
+  const handleAppointmentDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || appointmentDateTime;
+    setShowAppointmentDatePicker(Platform.OS === 'ios');
+    setAppointmentDateTime(currentDate);
+    if (Platform.OS !== 'ios') {
+        setShowAppointmentDatePicker(false);
     }
+  };
+
+  const handleAppointmentTimeChange = (event: any, selectedDate?: Date) => {
+    const currentTime = selectedDate || appointmentDateTime;
+    setShowAppointmentTimePicker(Platform.OS === 'ios');
+    setAppointmentDateTime(currentTime);
+    if (Platform.OS !== 'ios') {
+        setShowAppointmentTimePicker(false);
+    }
+  };
+
+  const handleSaveVitals = async () => {
+    if (!userId) return;
     if (!weight || !bloodPressure) {
       Alert.alert('Error', 'Por favor, ingrese el peso y la presión arterial.');
       return;
     }
-    console.log(`[Data] Saving vitals for userId: ${userId}`);
     try {
       await addDoc(collection(db, 'users', userId, 'vitals'), {
         weight,
@@ -218,21 +222,16 @@ export default function TrackingScreen() {
       setBloodPressure('');
       Alert.alert('Éxito', '¡Signos vitales guardados con éxito!');
     } catch (error) {
-      console.error('Error saving vitals: ', error);
       Alert.alert('Error', 'No se pudieron guardar los signos vitales.');
     }
   };
 
   const handleSaveSymptom = async () => {
-    if (!userId) {
-        Alert.alert('Error', 'No user ID found. Cannot save.');
-        return;
-    }
+    if (!userId) return;
     if (!symptom) {
       Alert.alert('Error', 'Por favor, ingrese un síntoma.');
       return;
     }
-    console.log(`[Data] Saving symptom for userId: ${userId}`);
     try {
       await addDoc(collection(db, 'users', userId, 'symptoms'), {
         symptom,
@@ -242,62 +241,55 @@ export default function TrackingScreen() {
       setSymptom('');
       Alert.alert('Éxito', '¡Síntoma guardado con éxito!');
     } catch (error) {
-      console.error('Error saving symptom: ', error);
       Alert.alert('Error', 'No se pudo guardar el síntoma.');
     }
   };
 
   const handleSaveAppointment = async () => {
-    if (!userId) {
-        Alert.alert('Error', 'No user ID found. Cannot save.');
-        return;
-    }
-    if (!appointmentDate || !appointmentTime) {
-      Alert.alert('Error', 'Por favor, complete la fecha y hora de la cita.');
-      return;
-    }
-    console.log(`[Data] Saving appointment for userId: ${userId}`);
+    if (!userId) return;
     try {
       await addDoc(collection(db, 'users', userId, 'appointments'), {
-        date: appointmentDate,
-        time: appointmentTime,
+        date: appointmentDateTime.toLocaleDateString('es-ES'),
+        time: appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
         notes: appointmentNotes,
         createdAt: serverTimestamp(),
       });
-      setAppointmentDate('');
-      setAppointmentTime('');
+      
+      console.log('--- Inciando programación de notificación ---');
+      console.log(`Fecha de la cita seleccionada: ${appointmentDateTime.toString()}`);
+
+      // Schedule notification 1 day before the appointment
+      const reminderDate = new Date(appointmentDateTime.getTime() - 24 * 60 * 60 * 1000);
+      console.log(`Fecha calculada para el recordatorio: ${reminderDate.toString()}`);
+
+      if (reminderDate.getTime() > Date.now()) {
+        console.log('La fecha del recordatorio es en el futuro, programando...');
+        await NotificationService.scheduleAppointmentNotification(
+          reminderDate,
+          "Recordatorio de Cita",
+          `¡Recuerda tu cita de mañana! Es a las ${appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`
+        );
+      } else {
+        console.warn('La fecha del recordatorio ya pasó. No se programará la notificación.');
+      }
+
+      setAppointmentDateTime(new Date());
       setAppointmentNotes('');
-      Alert.alert('Éxito', '¡Cita guardada con éxito!');
+      Alert.alert('Éxito', '¡Cita guardada con éxito! Se ha programado un recordatorio para el día anterior.');
     } catch (error) {
-      console.error('Error saving appointment: ', error);
+      console.error('Error al guardar o programar la cita:', error);
       Alert.alert('Error', 'No se pudo guardar la cita.');
     }
   };
   
   const getFetusImageSource = (week: number | null) => {
-    if (week === null) {
-      return require('../../assets/images/fetus/placeholder.png');
-    }
-
+    if (week === null) return require('../../assets/images/fetus/placeholder.png');
     switch (week) {
-      case 1:
-        return require('../../assets/images/fetus/semana_1.png');
-      case 2:
-        return require('../../assets/images/fetus/semana_2.png');
-      case 3:
-        return require('../../assets/images/fetus/semana_3.png');
-      case 4:
-        return require('../../assets/images/fetus/semana_4.png');
-      // TODO: For each image you add to the 'fetus' folder, add a case here.
-      /*
-      case 5:
-        return require('../../assets/images/fetus/semana_5.png');
-      case 6:
-        return require('../../assets/images/fetus/semana_6.png');
-      */
-      
-      default:
-        return require('../../assets/images/fetus/placeholder.png');
+      case 1: return require('../../assets/images/fetus/semana_1.png');
+      case 2: return require('../../assets/images/fetus/semana_2.png');
+      case 3: return require('../../assets/images/fetus/semana_3.png');
+      case 4: return require('../../assets/images/fetus/semana_4.png');
+      default: return require('../../assets/images/fetus/placeholder.png');
     }
   };
 
@@ -324,11 +316,7 @@ export default function TrackingScreen() {
         <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
         {lmp && currentWeek !== null ? (
           <>
-            <Image
-              source={getFetusImageSource(currentWeek)}
-              style={styles.fetalImage}
-              onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-            />
+            <Image source={getFetusImageSource(currentWeek)} style={styles.fetalImage} />
             <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
             <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
               <Text style={styles.buttonText}>Cambiar FUM</Text>
@@ -357,25 +345,11 @@ export default function TrackingScreen() {
       {/* Vitals Tracking */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Seguimiento de Signos Vitales</ThemedText>
-        <TextInput
-          style={styles.input}
-          placeholder="Peso (kg)"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          keyboardType="numeric"
-          value={weight}
-          onChangeText={setWeight}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Presión Arterial (ej. 120/80)"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          value={bloodPressure}
-          onChangeText={setBloodPressure}
-        />
+        <TextInput style={styles.input} placeholder="Peso (kg)" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} keyboardType="numeric" value={weight} onChangeText={setWeight} />
+        <TextInput style={styles.input} placeholder="Presión Arterial (ej. 120/80)" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} value={bloodPressure} onChangeText={setBloodPressure} />
         <TouchableOpacity style={styles.button} onPress={handleSaveVitals}>
           <Text style={styles.buttonText}>Guardar Signos Vitales</Text>
         </TouchableOpacity>
-
         <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
         {vitalsList.length > 0 ? (
           vitalsList.map((item) => (
@@ -392,17 +366,10 @@ export default function TrackingScreen() {
       {/* Symptom Logging */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Registro de Síntomas</ThemedText>
-        <TextInput
-          style={styles.input}
-          placeholder="Describe tu síntoma"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          value={symptom}
-          onChangeText={setSymptom}
-        />
+        <TextInput style={styles.input} placeholder="Describe tu síntoma" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} value={symptom} onChangeText={setSymptom} />
         <TouchableOpacity style={styles.button} onPress={handleSaveSymptom}>
           <Text style={styles.buttonText}>Guardar Síntoma</Text>
         </TouchableOpacity>
-
         <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
         {symptomsList.length > 0 ? (
           symptomsList.map((item) => (
@@ -419,20 +386,35 @@ export default function TrackingScreen() {
       {/* Medical Appointments */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Gestión de Citas Médicas</ThemedText>
-        <TextInput
-          style={styles.input}
-          placeholder="Fecha (DD/MM/AAAA)"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          value={appointmentDate}
-          onChangeText={setAppointmentDate}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Hora (HH:MM)"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          value={appointmentTime}
-          onChangeText={setAppointmentTime}
-        />
+        
+        <TouchableOpacity onPress={() => setShowAppointmentDatePicker(true)} style={styles.inputButton}>
+            <Text style={styles.inputText}>
+                {`Fecha: ${appointmentDateTime.toLocaleDateString('es-ES')}`}
+            </Text>
+        </TouchableOpacity>
+        {showAppointmentDatePicker && (
+            <DateTimePicker
+                value={appointmentDateTime}
+                mode="date"
+                display="default"
+                onChange={handleAppointmentDateChange}
+            />
+        )}
+
+        <TouchableOpacity onPress={() => setShowAppointmentTimePicker(true)} style={styles.inputButton}>
+            <Text style={styles.inputText}>
+                {`Hora: ${appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`}
+            </Text>
+        </TouchableOpacity>
+        {showAppointmentTimePicker && (
+            <DateTimePicker
+                value={appointmentDateTime}
+                mode="time"
+                display="default"
+                onChange={handleAppointmentTimeChange}
+            />
+        )}
+
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Notas de la cita"
@@ -512,6 +494,21 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 15,
     color: isDarkMode ? '#FFFFFF' : '#333333',
     backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
+  },
+  inputButton: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#555' : '#E8EAF6',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
+    justifyContent: 'center',
+  },
+  inputText: {
+    color: isDarkMode ? '#FFFFFF' : '#333333',
+    fontSize: 16,
   },
   textArea: {
     height: 80,
