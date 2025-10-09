@@ -3,9 +3,11 @@ import { router } from 'expo-router';
 import {
   FacebookAuthProvider,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithCredential,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  signOut
 } from 'firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -58,8 +60,17 @@ export default function LoginScreen() {
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user && isMountedRef.current) {
-        const termsAccepted = await checkTermsAccepted();
+        // if the user is logged in but email is not verified
+        if (!user.emailVerified) {
+          Alert.alert(
+            'Verifica tu correo',
+            'Te enviamos un email de verificación. Debes confirmarlo para continuar.'
+          );
+          await signOut(auth);
+          return;
+        }
 
+        const termsAccepted = await checkTermsAccepted();
         if (termsAccepted) {
           router.replace('/(tabs)');
         } else {
@@ -71,8 +82,6 @@ export default function LoginScreen() {
     return () => {
       isMountedRef.current = false;
       unsubscribe();
-
-      // Clear intervals and timeouts
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (popupRef.current && !popupRef.current.closed) {
@@ -80,6 +89,7 @@ export default function LoginScreen() {
       }
     };
   }, []);
+
 
   // Función segura para establecer estado
   const safeSetIsLoading = (value: boolean) => {
@@ -100,6 +110,19 @@ export default function LoginScreen() {
     }
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
+
+      // if email is not verified yet
+      if (!user.user.emailVerified) {
+        // resend verification email
+        await sendEmailVerification(user.user);
+        Alert.alert(
+          'Verificación requerida',
+          'Tu correo aún no está verificado. Te reenviamos el email de verificación.'
+        );
+        await signOut(auth);
+        return; // no redirection until email is verified
+      }
+
       if (user && isMountedRef.current) {
         const termsAccepted = await checkTermsAccepted();
         if (termsAccepted) {
@@ -126,17 +149,21 @@ export default function LoginScreen() {
       Alert.alert('Email inválido', 'Por favor, ingresa un correo electrónico válido.');
       return;
     }
-    
+
     try {
-      const user = await createUserWithEmailAndPassword(auth, email, password);
-      if (user && isMountedRef.current) {
-        const termsAccepted = await checkTermsAccepted();
-        if (termsAccepted) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/privacy');
-        }
-      }
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // send email verification
+      await sendEmailVerification(userCredential.user);
+      Alert.alert(
+        'Verifica tu correo',
+        'Te enviamos un email de verificación. Ábrelo y toca el enlace para activar tu cuenta.'
+      );
+
+      // close session until email is verified
+      await signOut(auth);
+
+      // no redirection until email is verified
     } catch (error) {
       const errorMsg = getFirebaseErrorMessage(error);
       Alert.alert('Error', errorMsg);
@@ -144,6 +171,7 @@ export default function LoginScreen() {
       safeSetIsLoading(false);
     }
   };
+
 
   const resetPassword = async () => {
     if (!email) {
