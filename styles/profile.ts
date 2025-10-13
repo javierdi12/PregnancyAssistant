@@ -193,6 +193,12 @@ export const getProfileStyles = (theme: 'light' | 'dark') =>
       fontSize: 16,
       color: theme === 'dark' ? '#fff' : '#1f2937',
     },
+    contactEmail: {
+      textAlign: 'center',
+      color: theme === 'dark' ? '#9ca3af' : '#4b5563',
+      fontSize: 14,
+      marginTop: 8,
+    },
     arrow: {
       fontSize: 18,
       color: theme === 'dark' ? '#888' : '#9ca3af',
@@ -216,4 +222,19 @@ export const getProfileStyles = (theme: 'light' | 'dark') =>
       fontSize: 16,
       fontWeight: '600',
     },
+    logoutButton: {
+      backgroundColor: '#EF4444',
+      padding: 16,
+      borderRadius: 12,
+      marginHorizontal: 20,
+      marginBottom: 30,
+      alignItems: 'center',
+    },
+    logoutButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
+
+
