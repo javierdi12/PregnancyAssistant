@@ -1,6 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoadingScreen, ProfileForm } from '@/components/profile/ProfileComponents';
 import { useProfile } from '@/hooks/useProfile';
-import { useColorScheme } from 'react-native';
+import { signOut } from 'firebase/auth';
+import { Alert, useColorScheme } from 'react-native';
+import { auth } from '../../FireBase';
+
+const AUTH_STATUS_KEY = 'auth_logged_in';
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -35,6 +40,15 @@ export default function ProfileScreen() {
     handlePhotoChange,
   } = useProfile();
 
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      await AsyncStorage.setItem(AUTH_STATUS_KEY, 'false');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo cerrar sesion. ' + String(error));
+    }
+  };
+
   if (loading) {
     return <LoadingScreen theme={theme} />;
   }
@@ -67,6 +81,7 @@ export default function ProfileScreen() {
       onShowDistrictPicker={setShowDistrictPicker}
       formatDate={formatDate}
       onPhotoChange={handlePhotoChange}
+      onSignOut={handleSignOut}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,20 +22,11 @@ export default function HomeScreen() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (!user) router.replace('/');
     });
     return unsubscribe;
   }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      router.replace('/');
-    } catch (error) {
-      Alert.alert('Error', 'Error signing out: ' + String(error));
-    }
-  };
 
   const styles = getStyles(isDarkMode);
 
@@ -89,11 +80,6 @@ export default function HomeScreen() {
             <ThemedText style={styles.quickActionButtonText}>Profile</ThemedText>
           </TouchableOpacity>
         </View>
-
-        {/* Sign Out Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </ThemedView>
   );
@@ -157,16 +143,5 @@ const getStyles = (isDarkMode: boolean) =>
       fontWeight: 'bold',
       color: isDarkMode ? '#FFFFFF' : '#333333',
     },
-    logoutButton: {
-      backgroundColor: '#FF3D00',
-      borderRadius: 8,
-      paddingVertical: 10,
-      paddingHorizontal: 24,
-      alignSelf: 'center',
-      marginBottom: 20,
-    },
-    logoutText: {
-      color: '#FFFFFF',
-      fontWeight: 'bold',
-    },
   });
+

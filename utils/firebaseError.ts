@@ -1,32 +1,42 @@
 // Function to map Firebase errors to user-friendly messages
 export function getFirebaseErrorMessage(error: any): string {
-  // Itry to get code directly
   let code = error?.code;
 
-  //obtain code from customData if not present
   if (!code && error?.customData?._tokenResponse?.error?.message) {
-    const apiMsg = error.customData._tokenResponse.error.message;
-    // mapping 
-    if (apiMsg === "EMAIL_EXISTS") code = "auth/email-already-in-use";
-    if (apiMsg === "EMAIL_NOT_FOUND") code = "auth/user-not-found";
-    if (apiMsg === "INVALID_PASSWORD") code = "auth/wrong-password";
-    if (apiMsg === "WEAK_PASSWORD") code = "auth/weak-password";
+    const apiMessage = error.customData._tokenResponse.error.message;
+    switch (apiMessage) {
+      case "EMAIL_EXISTS":
+        code = "auth/email-already-in-use";
+        break;
+      case "EMAIL_NOT_FOUND":
+        code = "auth/user-not-found";
+        break;
+      case "INVALID_PASSWORD":
+        code = "auth/wrong-password";
+        break;
+      case "WEAK_PASSWORD":
+        code = "auth/weak-password";
+        break;
+      default:
+        break;
+    }
   }
 
-  // amigable message
   switch (code) {
-    case 'auth/email-already-in-use':
-      return "El correo ya está registrado. Intenta iniciar sesión o usa otro correo.";
-    case 'auth/weak-password':
-      return "La contraseña es muy débil. Usa al menos 6 caracteres.";
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return "Correo o contraseña incorrectos. Intenta de nuevo.";
-    case 'auth/invalid-email':
-      return "El formato del correo es inválido.";
+    case "auth/email-already-in-use":
+      return "El correo ya esta registrado. Intenta iniciar sesion o usa otro correo.";
+    case "auth/weak-password":
+      return "La contrasena es muy debil. Usa al menos 6 caracteres.";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Correo o contrasena incorrectos. Intenta de nuevo.";
+    case "auth/invalid-email":
+      return "El formato del correo es invalido.";
+    case "auth/too-many-requests":
+      return "Cuenta sin verificar. Verifica tu correo e intenta nuevamente.";
     default:
-      return "Ocurrió un error inesperado: " + (error?.message ?? "Desconocido");
+      return "Ocurrio un error inesperado: " + (error?.message ?? "Desconocido");
   }
 }
 

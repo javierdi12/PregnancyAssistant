@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { db } from '../FireBase';
 
 // Define the structure of the user profile data
@@ -10,7 +10,7 @@ interface UserProfile {
   provincia?: string;
   canton?: string;
   distrito?: string;
-  // Add any other fields you want to display
+  
 }
 
 export const useUserProfileView = (userId: string | undefined | string[]) => {

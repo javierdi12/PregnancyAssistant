@@ -1,11 +1,12 @@
 import { Canton, District, Province } from '@/services/locationService';
 import { getProfileStyles } from '@/styles/profile';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
+  Linking,
   Modal,
   ScrollView,
   Text,
@@ -51,6 +52,7 @@ interface ProfileFormProps {
   onShowDistrictPicker: (show: boolean) => void;
   formatDate: (dateString: string) => string;
   onPhotoChange: () => void;
+  onSignOut: () => void;
 }
 
 export const ProfileForm = ({
@@ -80,13 +82,31 @@ export const ProfileForm = ({
   onShowDistrictPicker,
   formatDate,
   onPhotoChange,
+  onSignOut,
 }: ProfileFormProps) => {
   const styles = getProfileStyles(theme);
-  const router = useRouter();
 
-  const navigateToHelpCenter = () => router.push('/help-center');
-  const navigateToContact = () => router.push('/contact');
+  const handleHelpPress = () => {
+    Alert.alert('Ayuda rapida', '- Verifica tu correo para activar la cuenta.\n- Completa tu perfil para personalizar la app.\n- Registra tus controles en la seccion de Seguimiento.');
+  };
 
+  const handleContactPress = async () => {
+    const supportEmail = 'pregnancyassistant9@gmail.com';
+    const subject = encodeURIComponent('Soporte Pregnancy Assistant');
+    const mailto = `mailto:${supportEmail}?subject=${subject}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(mailto);
+      if (canOpen) {
+        await Linking.openURL(mailto);
+        return;
+      }
+    } catch (error) {
+      console.error('Error opening mail client:', error);
+    }
+
+    Alert.alert('Contacto', `Puedes escribirnos a ${supportEmail}`);
+  };
   const renderProvinceItem = ({ item }: { item: Province }) => (
     <TouchableOpacity
       style={styles.locationItem}
@@ -319,7 +339,6 @@ export const ProfileForm = ({
               </Text>
             </TouchableOpacity>
           </View>
-
           {/* Distrito */}
           <View style={styles.inputRow}>
             <Text style={styles.label}>Distrito:</Text>
@@ -344,7 +363,7 @@ export const ProfileForm = ({
           </View>
         </View>
 
-        {/* Modales para selección de ubicación */}
+        {/* Modales para seleccion de ubicacion */}
         <LocationPickerModal
           visible={showProvincePicker}
           title="Seleccionar Provincia"
@@ -377,22 +396,28 @@ export const ProfileForm = ({
 
         {/* Help section */}
         <View style={styles.helpSection}>
-          <Text style={styles.helpTitle}>Ayuda</Text>
+          <Text style={styles.helpTitle}>Ayuda y soporte</Text>
 
-          <TouchableOpacity style={styles.helpButton} onPress={navigateToHelpCenter}>
-            <Text style={styles.helpText}>Centro de ayuda</Text>
+          <TouchableOpacity style={styles.helpButton} onPress={handleHelpPress}>
+            <Text style={styles.helpText}>Guia rapida de la app</Text>
+            <Text style={styles.arrow}>?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.helpButton} onPress={handleContactPress}>
+            <Text style={styles.helpText}>Escribir a soporte</Text>
             <Text style={styles.arrow}>{'>'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.helpButton} onPress={navigateToContact}>
-            <Text style={styles.helpText}>Contacto</Text>
-            <Text style={styles.arrow}>{'>'}</Text>
-          </TouchableOpacity>
+          <Text style={styles.contactEmail}>pregnancyassistant9@gmail.com</Text>
         </View>
 
         {/* Save */}
         <TouchableOpacity style={styles.saveButton} onPress={onSave} disabled={saving}>
           <Text style={styles.saveButtonText}>{saving ? 'Guardando...' : 'Guardar cambios'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={onSignOut}>
+          <Text style={styles.logoutButtonText}>Cerrar sesion</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -412,3 +437,4 @@ export const LoadingScreen = ({ theme }: LoadingScreenProps) => {
     </SafeAreaView>
   );
 };
+
