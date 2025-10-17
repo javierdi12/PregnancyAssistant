@@ -2,7 +2,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useLayoutEffect, useState } from 'react';
 
 export const useWelcome = () => {
-  const router = useRouter();
+  const router = useRouter();  // Initialize the router to handle navigation between screens
   const navigation = useNavigation();
   const [showMessage, setShowMessage] = useState(false);
 
@@ -11,9 +11,9 @@ export const useWelcome = () => {
   }, [navigation]);
 
   const handleGetStarted = () => {
-    setShowMessage(true);
+    setShowMessage(true);// Display the temporary message
     setTimeout(() => {
-      setShowMessage(false);
+      setShowMessage(false);// Hide the message after 2 seconds
       router.replace('/(tabs)');
     }, 2000);
   };

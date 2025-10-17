@@ -1,26 +1,26 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to store data locally on the device
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert } from 'react-native'; // Import Alert to display alerts in the app
 
-export const usePrivacy = () => {
-  const [dataUsageAccepted, setDataUsageAccepted] = useState(false);
-  const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const router = useRouter();
+export const usePrivacy = () => {// Custom hook to handle privacy acceptance and announcements
+  const [dataUsageAccepted, setDataUsageAccepted] = useState(false);// Status indicating whether the user accepted the use of essential data
+  const [personalizedAdsAccepted, setPersonalizedAdsAccepted] = useState(false); // Status indicating whether the user accepted personalized ads
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);// Status to control whether the privacy modal is displayed
+  const router = useRouter(); // Navigation hook to redirect the user
 
-  const handleAcceptNecessary = () => {
+  const handleAcceptNecessary = () => { // Function that runs when the user only accepts the necessary data
     setDataUsageAccepted(true);
     setPersonalizedAdsAccepted(false);
   };
 
-  const handleAcceptAll = () => {
+  const handleAcceptAll = () => { // Function that runs when the user accepts everything
     setDataUsageAccepted(true);
     setPersonalizedAdsAccepted(true);
   };
 
-  const handleContinue = async () => {
-    if (!dataUsageAccepted) {
+  const handleContinue = async () => {// Function that runs when continuing after accepting privacy policy
+    if (!dataUsageAccepted) {// If essential data is not accepted, display an alert and do not continue.
       Alert.alert(
         'Atención',
         'Debes aceptar el uso de datos esenciales para continuar',
@@ -30,18 +30,18 @@ export const usePrivacy = () => {
     }
 
     try {
-      await AsyncStorage.setItem('terms_accepted', 'true');
+      await AsyncStorage.setItem('terms_accepted', 'true');// Save in AsyncStorage that the terms were accepted
       await AsyncStorage.setItem(
         'ads_accepted',
         personalizedAdsAccepted ? 'true' : 'false'
       );
-      router.replace('/welcome');
+      router.replace('/welcome');// Redirects the user to the welcome screen
     } catch (error) {
       console.error('Error guardando términos:', error);
     }
   };
 
-  return {
+  return {  // Returns all states and functions to use in the UI
     dataUsageAccepted,
     setDataUsageAccepted,
     personalizedAdsAccepted,

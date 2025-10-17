@@ -1,6 +1,6 @@
 import { ThemedView } from '@/components/ThemedView';
-import { WelcomeContent, WelcomeOverlay } from '@/components/welcome/WelcomeComponents';
-import { useWelcome } from '@/hooks/useWelcome';
+import { WelcomeContent, WelcomeOverlay } from '@/components/welcome/WelcomeComponents'; // Import the specific components of the welcome screen
+import { useWelcome } from '@/hooks/useWelcome'; // Import the custom hook that handles the welcome logic
 import { View, useColorScheme } from 'react-native';
 
 export default function WelcomeScreen() {
