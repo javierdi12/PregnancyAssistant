@@ -3,10 +3,10 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export const getPrivacyPolicy = async () => {
   try {
-    const docRef = doc(db, 'privacy_policies', 'current_policy');
-    const docSnap = await getDoc(docRef);
+    const docRef = doc(db, 'privacy_policies', 'current_policy'); //creates a reference to the privacy policy document
+    const docSnap = await getDoc(docRef); // Gets the referenced document from Firestore
 
-    if (docSnap.exists()) {
+    if (docSnap.exists()) { // Check if the document exists
       return docSnap.data();
     } else {
       console.warn('No existe la política de privacidad en Firestore.');

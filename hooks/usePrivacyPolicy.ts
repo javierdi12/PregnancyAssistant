@@ -3,17 +3,17 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 export const usePrivacyPolicy = () => {
-  const [privacyContent, setPrivacyContent] = useState('');
+  const [privacyContent, setPrivacyContent] = useState('');// Status that will store the content of the privacy policy
   const [loading, setLoading] = useState(true);
 
-  const loadPrivacyContent = async () => {
+  const loadPrivacyContent = async () => {// Function to load policy content from Firestore
     try {
-      setLoading(true);
+      setLoading(true);// Enable charging status
       
-      const docRef = doc(db, 'privacy_policies', 'current_policy');
-      const docSnap = await getDoc(docRef);
+      const docRef = doc(db, 'privacy_policies', 'current_policy'); // Reference to the document ‘current_policy’ within the collection 'privacy_policies'
+      const docSnap = await getDoc(docRef);// Get the document from Firestore
       
-      if (docSnap.exists()) {
+      if (docSnap.exists()) {// If the document exists, extract the content
         const data = docSnap.data();
         if (data.privacyContent) {
           setPrivacyContent(data.privacyContent);
@@ -35,7 +35,7 @@ export const usePrivacyPolicy = () => {
     loadPrivacyContent();
   }, []);
 
-  return {
+  return {// Returns the policy content and loading status
     privacyContent,
     loading
   };
