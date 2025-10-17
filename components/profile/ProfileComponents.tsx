@@ -417,7 +417,7 @@ export const ProfileForm = ({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutButton} onPress={onSignOut}>
-          <Text style={styles.logoutButtonText}>Cerrar sesion</Text>
+          <Text style={styles.logoutButtonText}>Cerrar</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

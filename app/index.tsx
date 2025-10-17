@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { FACEBOOK_APP_ID } from '../constants/AuthFace';
 import { auth } from '../FireBase';
+import { useGoogleAuth } from '../services/googleAuth';
 import { getLoginStyles } from '../styles/login';
 import { getFirebaseErrorMessage, isValidEmail } from '../utils/firebaseError';
 
@@ -61,7 +62,8 @@ export default function LoginScreen() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user && isMountedRef.current) {
         // if the user is logged in but email is not verified
-        if (!user.emailVerified) {
+        const isPassword = user.providerData.some(p => p.providerId === 'password');
+        if (isPassword && !user.emailVerified) {
           Alert.alert(
             'Verifica tu correo',
             'Te enviamos un email de verificación. Debes confirmarlo para continuar.'
@@ -190,9 +192,21 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    Alert.alert('Google Sign-In', 'Esta funcionalidad requiere configuración adicional');
+  const { handleGoogleSignIn, isLoading: isGoogleLoading } = useGoogleAuth();
+
+  const handleGooglePress = async () => {
+    try {
+      safeSetIsLoading(true);
+      await handleGoogleSignIn();
+      // No redirijas aquí; el effect lo hace
+    } catch (e) {
+      console.error('Error en login con Google:', e);
+      Alert.alert('Error', 'No se pudo iniciar sesión con Google');
+    } finally {
+      safeSetIsLoading(false);
+    }
   };
+
 
   const handleFacebookSignIn = async () => {
     safeSetIsLoading(true);
@@ -413,7 +427,8 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={handleGoogleSignIn}
+              onPress={handleGooglePress}
+              disabled={isGoogleLoading}
             >
               <Text style={styles.optionText}>Ingresa con Google</Text>
             </TouchableOpacity>
