@@ -54,6 +54,13 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={styles.quickActionButton}
+            onPress={() => router.push('/(tabs)/citas')}>
+            <Feather name="calendar" size={24} color={styles.quickActionButtonText.color} />
+            <ThemedText style={styles.quickActionButtonText}>Gestión de Citas</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionButton}
             onPress={() => router.push('/(tabs)/ai-assistant')}>
             <Feather name="cpu" size={24} color={styles.quickActionButtonText.color} />
             <ThemedText style={styles.quickActionButtonText}>AI Assistant</ThemedText>

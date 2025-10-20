@@ -49,14 +49,6 @@ interface Symptom {
   createdAt: Timestamp;
 }
 
-interface Appointment {
-  id: string;
-  date: string;
-  time: string;
-  notes: string;
-  createdAt: Timestamp;
-}
-
 export default function TrackingScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
@@ -78,13 +70,6 @@ export default function TrackingScreen() {
   // State for Symptoms
   const [symptom, setSymptom] = useState<string>('');
   const [symptomsList, setSymptomsList] = useState<Symptom[]>([]);
-
-  // State for Appointments
-  const [appointmentDateTime, setAppointmentDateTime] = useState(new Date());
-  const [appointmentNotes, setAppointmentNotes] = useState<string>('');
-  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
-  const [showAppointmentDatePicker, setShowAppointmentDatePicker] = useState(false);
-  const [showAppointmentTimePicker, setShowAppointmentTimePicker] = useState(false);
 
   // Loading state
   const [loading, setLoading] = useState<boolean>(true);
@@ -112,7 +97,6 @@ export default function TrackingScreen() {
       setLmp(null);
       setVitalsList([]);
       setSymptomsList([]);
-      setAppointmentsList([]);
       setLoading(false);
       return;
     }
@@ -143,16 +127,9 @@ export default function TrackingScreen() {
       setSymptomsList(symptomsData);
     });
 
-    const appointmentsQuery = query(collection(db, 'users', userId, 'appointments'), orderBy('createdAt', 'desc'));
-    const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
-      const appointmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
-      setAppointmentsList(appointmentsData);
-    });
-
     return () => {
       unsubscribeVitals();
       unsubscribeSymptoms();
-      unsubscribeAppointments();
     };
   }, [userId]);
 
@@ -184,24 +161,6 @@ export default function TrackingScreen() {
       setLmp(selectedDate);
       const userDocRef = doc(db, 'users', userId);
       setDoc(userDocRef, { lmp: selectedDate }, { merge: true });
-    }
-  };
-
-  const handleAppointmentDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || appointmentDateTime;
-    setShowAppointmentDatePicker(Platform.OS === 'ios');
-    setAppointmentDateTime(currentDate);
-    if (Platform.OS !== 'ios') {
-        setShowAppointmentDatePicker(false);
-    }
-  };
-
-  const handleAppointmentTimeChange = (event: any, selectedDate?: Date) => {
-    const currentTime = selectedDate || appointmentDateTime;
-    setShowAppointmentTimePicker(Platform.OS === 'ios');
-    setAppointmentDateTime(currentTime);
-    if (Platform.OS !== 'ios') {
-        setShowAppointmentTimePicker(false);
     }
   };
 
@@ -242,43 +201,6 @@ export default function TrackingScreen() {
       Alert.alert('Éxito', '¡Síntoma guardado con éxito!');
     } catch (error) {
       Alert.alert('Error', 'No se pudo guardar el síntoma.');
-    }
-  };
-
-  const handleSaveAppointment = async () => {
-    if (!userId) return;
-    try {
-      await addDoc(collection(db, 'users', userId, 'appointments'), {
-        date: appointmentDateTime.toLocaleDateString('es-ES'),
-        time: appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        notes: appointmentNotes,
-        createdAt: serverTimestamp(),
-      });
-      
-      console.log('--- Inciando programación de notificación ---');
-      console.log(`Fecha de la cita seleccionada: ${appointmentDateTime.toString()}`);
-
-      // Schedule notification 1 day before the appointment
-      const reminderDate = new Date(appointmentDateTime.getTime() - 24 * 60 * 60 * 1000);
-      console.log(`Fecha calculada para el recordatorio: ${reminderDate.toString()}`);
-
-      if (reminderDate.getTime() > Date.now()) {
-        console.log('La fecha del recordatorio es en el futuro, programando...');
-        await NotificationService.scheduleAppointmentNotification(
-          reminderDate,
-          "Recordatorio de Cita",
-          `¡Recuerda tu cita de mañana! Es a las ${appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`
-        );
-      } else {
-        console.warn('La fecha del recordatorio ya pasó. No se programará la notificación.');
-      }
-
-      setAppointmentDateTime(new Date());
-      setAppointmentNotes('');
-      Alert.alert('Éxito', '¡Cita guardada con éxito! Se ha programado un recordatorio para el día anterior.');
-    } catch (error) {
-      console.error('Error al guardar o programar la cita:', error);
-      Alert.alert('Error', 'No se pudo guardar la cita.');
     }
   };
   
@@ -380,64 +302,6 @@ export default function TrackingScreen() {
           ))
         ) : (
           <Text style={styles.emptyListText}>No hay síntomas registrados.</Text>
-        )}
-      </ThemedView>
-
-      {/* Medical Appointments */}
-      <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Gestión de Citas Médicas</ThemedText>
-        
-        <TouchableOpacity onPress={() => setShowAppointmentDatePicker(true)} style={styles.inputButton}>
-            <Text style={styles.inputText}>
-                {`Fecha: ${appointmentDateTime.toLocaleDateString('es-ES')}`}
-            </Text>
-        </TouchableOpacity>
-        {showAppointmentDatePicker && (
-            <DateTimePicker
-                value={appointmentDateTime}
-                mode="date"
-                display="default"
-                onChange={handleAppointmentDateChange}
-            />
-        )}
-
-        <TouchableOpacity onPress={() => setShowAppointmentTimePicker(true)} style={styles.inputButton}>
-            <Text style={styles.inputText}>
-                {`Hora: ${appointmentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`}
-            </Text>
-        </TouchableOpacity>
-        {showAppointmentTimePicker && (
-            <DateTimePicker
-                value={appointmentDateTime}
-                mode="time"
-                display="default"
-                onChange={handleAppointmentTimeChange}
-            />
-        )}
-
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Notas de la cita"
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-          multiline
-          numberOfLines={3}
-          value={appointmentNotes}
-          onChangeText={setAppointmentNotes}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleSaveAppointment}>
-          <Text style={styles.buttonText}>Guardar Cita</Text>
-        </TouchableOpacity>
-
-        <ThemedText style={styles.listTitle}>Próximas Citas</ThemedText>
-        {appointmentsList.length > 0 ? (
-          appointmentsList.map((item) => (
-            <View key={item.id} style={styles.listItem}>
-              <Text style={styles.logTextBold}>{item.date} a las {item.time}</Text>
-              <Text style={styles.logText}>{item.notes}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyListText}>No hay citas registradas.</Text>
         )}
       </ThemedView>
     </ScrollView>
