@@ -17,6 +17,7 @@ const MAPPING = {
   'house.fill': 'home',
   'sparkles': 'auto-awesome',
   'chart.bar.fill': 'bar-chart',
+  'calendar': 'event',
   'ellipsis': 'more-horiz',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',

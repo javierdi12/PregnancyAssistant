@@ -57,7 +57,7 @@ export async function scheduleAppointmentNotification(date: Date, title: string,
     content: {
       title,
       body,
-      data: { screen: 'tracking' }, // Dato opcional para redirigir al usuario si toca la notificación
+      data: { screen: 'citas' }, // Dato opcional para redirigir al usuario si toca la notificación
     },
     trigger,
   });
