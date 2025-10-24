@@ -10,6 +10,8 @@ import {
   useColorScheme,
 } from 'react-native';
 import { auth } from '../../FireBase';
+import { registerForPushNotificationsAsync } from '../../services/notificationService';
+import { getOrCreateUserProfile } from '../../services/userService';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -20,10 +22,18 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, or ensure profile exists and register for notifications if authenticated
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (!user) router.replace('/');
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Ensure user profile exists before doing anything else
+        await getOrCreateUserProfile(user);
+        // Register for push notifications
+        registerForPushNotificationsAsync();
+      } else {
+        // User is signed out, redirect to welcome screen
+        router.replace('/');
+      }
     });
     return unsubscribe;
   }, []);
