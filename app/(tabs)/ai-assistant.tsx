@@ -3,7 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 
 // The api hi
@@ -24,16 +24,16 @@ export default function AIAssistantScreen() {
     setLoadingTip(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     const tips = [
-      "Mantente hidratada bebiendo suficiente agua durante el día.",
-      "Realiza caminatas suaves para mantenerte activa y mejorar la circulación.",
-      "Asegúrate de descansar lo suficiente; las siestas cortas pueden ser muy útiles.",
-      "Consume una dieta equilibrada rica en frutas, verduras y proteínas.",
-      "Habla con tu bebé; se ha demostrado que fortalece el vínculo.",
-      "Prepara tu espacio para el bebé con anticipación para reducir el estrés.",
-      "Asiste a clases de preparación para el parto para sentirte más segura.",
-      "No dudes en pedir ayuda a tu pareja, familiares o amigos.",
-      "Lleva un registro de los movimientos de tu bebé a medida que avanza el embarazo.",
-      "Disfruta de este momento único y especial en tu vida."
+      "💧 Mantente hidratada bebiendo suficiente agua durante el día.",
+      "🚶‍♀️ Realiza caminatas suaves para mantenerte activa y mejorar la circulación.",
+      "😴 Asegúrate de descansar lo suficiente; las siestas cortas pueden ser muy útiles.",
+      "🥗 Consume una dieta equilibrada rica en frutas, verduras y proteínas.",
+      "💝 Habla con tu bebé; se ha demostrado que fortalece el vínculo.",
+      "🏡 Prepara tu espacio para el bebé con anticipación para reducir el estrés.",
+      "👶 Asiste a clases de preparación para el parto para sentirte más segura.",
+      "🤗 No dudes en pedir ayuda a tu pareja, familiares o amigos.",
+      "📝 Lleva un registro de los movimientos de tu bebé a medida que avanza el embarazo.",
+      "✨ Disfruta de este momento único y especial en tu vida."
     ];
     const randomTip = tips[Math.floor(Math.random() * tips.length)];
     setDailyTip(randomTip);
@@ -102,25 +102,40 @@ const handleAskAI = async () => {
     container: {
       flex: 1,
       padding: 20,
-      backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
+      backgroundColor: isDarkMode ? '#121212' : '#FFF5F8',
     },
     scrollContainer: {
       flexGrow: 1,
       justifyContent: 'center',
       alignItems: 'center',
     },
+    header: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
-      marginBottom: 20,
-      color: isDarkMode ? '#FFFFFF' : '#1A237E',
+      fontWeight: '700',
+      color: isDarkMode ? '#FFB6D9' : '#D6336C',
+      textAlign: 'center',
+      marginBottom: 8,
+      letterSpacing: 0.5,
     },
     subtitle: {
       fontSize: 22,
       fontWeight: '600',
-      marginTop: 20,
-      marginBottom: 10,
-      color: isDarkMode ? Colors.dark.text : Colors.light.text,
+      textAlign: 'center',
+      color: isDarkMode ? '#D4A5C0' : '#9E7B8E',
+      fontStyle: 'italic',
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      marginTop: 24,
+      marginBottom: 16,
+      color: isDarkMode ? '#FFB6D9' : '#C62368',
+      paddingHorizontal: 4,
     },
     content: {
       fontSize: 16,
@@ -148,10 +163,11 @@ const handleAskAI = async () => {
       width: '100%',
       marginBottom: 20,
     },
-    buttonText: {
+    askButtonText: {
       color: '#FFFFFF',
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
     aiResponseContainer: {
       backgroundColor: isDarkMode ? '#1E1E1E' : '#E8EAF6',
@@ -169,18 +185,26 @@ const handleAskAI = async () => {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <ThemedText type="title" style={styles.title}>Asistente IA</ThemedText>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* Header */}
+        <View style={styles.header}>
+            <ThemedText style={styles.title}>✨ Asistente de IA ✨</ThemedText>
+            <ThemedText style={styles.subtitle}>Tu compañera inteligente durante el embarazo</ThemedText>
+        </View>
         
         {/* Preguntas frecuentes */}
-        <ThemedText style={styles.subtitle}>Preguntas Frecuentes</ThemedText>
-        <Collapsible title="¿Qué es el embarazo?">
+        <ThemedText style={styles.sectionTitle}>💭 Preguntas Frecuentes</ThemedText>
+        <Collapsible title="🤰 ¿Qué es el embarazo?">
           <ThemedText>El embarazo es el período en el que un feto se desarrolla dentro del útero de una mujer.</ThemedText>
         </Collapsible>
-        <Collapsible title="¿Cuánto dura un embarazo?">
+        <Collapsible title="⏰ ¿Cuánto dura un embarazo?">
           <ThemedText>Un embarazo a término completo dura aproximadamente 40 semanas, o unos 9 meses.</ThemedText>
         </Collapsible>
-        <Collapsible title="¿Cuáles son los primeros signos de embarazo?">
+        <Collapsible title="💫 ¿Cuáles son los primeros signos de embarazo?">
           <ThemedText>Los primeros signos pueden incluir un período menstrual omitido, náuseas, fatiga y sensibilidad en los senos.</ThemedText>
         </Collapsible>
         <Collapsible title="¿Es seguro hacer ejercicio durante el embarazo?">
@@ -188,7 +212,7 @@ const handleAskAI = async () => {
         </Collapsible>
         
         {/* Consejos diarios */}
-        <ThemedText style={styles.subtitle}>Consejos Diarios</ThemedText>
+        <ThemedText style={styles.subtitle}>💕 Consejo del Día</ThemedText>
         {loadingTip ? (
           <ActivityIndicator size="large" color={isDarkMode ? Colors.dark.tint : Colors.light.tint} />
         ) : (
@@ -196,15 +220,20 @@ const handleAskAI = async () => {
         )}
         
         {/* Preguntar a la IA */}
-        <ThemedText style={styles.subtitle}>Pregunta a la IA</ThemedText>
+        <ThemedText style={styles.sectionTitle}>🤖 Pregunta a la IA</ThemedText>
+        <ThemedText style={[styles.subtitle, { marginTop: 0, marginBottom: 16 }]}>
+          Haz cualquier pregunta sobre tu embarazo
+        </ThemedText>
+                
         <TextInput
           style={styles.input}
-          placeholder="Escribe tu pregunta aquí..."
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
+          placeholder="Escribe tu pregunta aquí... 💭"
+          placeholderTextColor={isDarkMode ? '#6B5B62' : '#C4A4B4'}
           value={question}
           onChangeText={setQuestion}
           multiline
         />
+
         <TouchableOpacity
           style={styles.button}
           onPress={handleAskAI}
@@ -213,7 +242,7 @@ const handleAskAI = async () => {
           {askingAI ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <ThemedText style={styles.buttonText}>Preguntar</ThemedText>
+            <ThemedText style={styles.askButtonText}>✨ Preguntar</ThemedText>
           )}
         </TouchableOpacity>
         
