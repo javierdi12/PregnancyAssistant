@@ -87,7 +87,9 @@ export const ProfileForm = ({
   const styles = getProfileStyles(theme);
 
   const handleHelpPress = () => {
-    Alert.alert('Ayuda rapida', '- Verifica tu correo para activar la cuenta.\n- Completa tu perfil para personalizar la app.\n- Registra tus controles en la seccion de Seguimiento.');
+    Alert.alert(
+      '💝 Ayuda rapida', 
+      '✨ Verifica tu correo para activar la cuenta.\n🌸 Completa tu perfil para personalizar la app.\n💕 Registra tus controles en la seccion de Seguimiento.');
   };
 
   const handleContactPress = async () => {
@@ -105,7 +107,7 @@ export const ProfileForm = ({
       console.error('Error opening mail client:', error);
     }
 
-    Alert.alert('Contacto', `Puedes escribirnos a ${supportEmail}`);
+    Alert.alert('💌 Contacto', `Puedes escribirnos a ${supportEmail}`);
   };
   const renderProvinceItem = ({ item }: { item: Province }) => (
     <TouchableOpacity
@@ -171,8 +173,7 @@ export const ProfileForm = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={[
-          styles.modalContent,
+        <View style={[styles.modalContent,
           { backgroundColor: theme === 'dark' ? '#1e1e1e' : '#fff' }
         ]}>
           <Text style={[
@@ -184,7 +185,7 @@ export const ProfileForm = ({
           
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3b82f6" />
+              <ActivityIndicator size="large" color="#FF6B9D" />
               <Text style={styles.loadingText}>Cargando...</Text>
             </View>
           ) : (
@@ -201,7 +202,7 @@ export const ProfileForm = ({
             style={styles.modalCloseButton}
             onPress={onClose}
           >
-            <Text style={styles.modalCloseText}>Cancelar</Text>
+            <Text style={styles.modalCloseText}>Cerrar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -210,9 +211,14 @@ export const ProfileForm = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+
         <View style={styles.header}>
-          <Text style={styles.title}>Detalles de la cuenta</Text>
+          <Text style={styles.title}>✨ Mi Perfil ✨</Text>
+          <Text style={styles.subtitle}>Cuéntanos más sobre ti</Text>
         </View>
 
         {/* Foto de perfil */}
@@ -234,43 +240,43 @@ export const ProfileForm = ({
               {uploadingPhoto ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.changePhotoText}>+</Text>
+                <Text style={styles.changePhotoText}>📷</Text>
               )}
             </TouchableOpacity>
           </View>
           <Text style={styles.photoPlaceholderText}>
-            {uploadingPhoto ? 'Subiendo foto...' : 'Toca para cambiar foto'}
+            {uploadingPhoto ? 'Subiendo foto...' : 'Toca para la cámara para cambiar la foto'}
           </Text>
         </View>
         
         <View style={styles.formSection}>
           {/* Nombre */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Nombre:</Text>
+            <Text style={styles.label}>💝 Nombre:</Text>
             <TextInput
               style={styles.input}
               value={formData.nombre}
               onChangeText={(value) => onInputChange('nombre', value)}
               placeholder="Escribe aquí..."
-              placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+              placeholderTextColor={theme === 'dark' ? '#888' : '#C4A4B4'}
             />
           </View>
 
           {/* Apellidos */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Apellidos:</Text>
+            <Text style={styles.label}>🌸 Apellidos:</Text>
             <TextInput
               style={styles.input}
               value={formData.apellidos}
               onChangeText={(value) => onInputChange('apellidos', value)}
-              placeholder="Escribe aquí..."
-              placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+              placeholder="Tus apellidos.."
+              placeholderTextColor={theme === 'dark' ? '#888' : '#C4A4B4'}
             />
           </View>
 
           {/* Fecha de nacimiento */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Fecha de nacimiento:</Text>
+            <Text style={styles.label}>🎂 Fecha de nacimiento:</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => onShowDatePicker(true)}
@@ -297,16 +303,18 @@ export const ProfileForm = ({
           </View>
 
           {/* Edad */}
-          <View style={styles.inputRow}>
-            <Text style={styles.label}>Edad:</Text>
-            <Text style={styles.ageText}>
-              {edad !== null ? edad : ''}
-            </Text>
-          </View>
+          {edad !== null && (
+            <View style={styles.inputRow}>
+              <Text style={styles.label}>✨ Edad</Text>
+              <Text style={styles.ageText}>
+                {edad} años
+              </Text>
+            </View>
+          )}
 
           {/* Provincia */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Provincia:</Text>
+            <Text style={styles.label}>📍 Provincia:</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => onShowProvincePicker(true)}
@@ -319,12 +327,12 @@ export const ProfileForm = ({
 
           {/* Cantón */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Cantón:</Text>
+            <Text style={styles.label}>🏘️ Cantón:</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => {
                 if (!formData.provincia) {
-                  alert('Por favor selecciona una provincia primero');
+                 Alert.alert('💭', 'Por favor selecciona una provincia primero');
                   return;
                 }
                 onShowCantonPicker(true);
@@ -341,12 +349,12 @@ export const ProfileForm = ({
           </View>
           {/* Distrito */}
           <View style={styles.inputRow}>
-            <Text style={styles.label}>Distrito:</Text>
+            <Text style={styles.label}>🏡 Distrito:</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => {
                 if (!formData.canton) {
-                  alert('Por favor selecciona un cantón primero');
+                  Alert.alert('💭', 'Por favor selecciona un cantón primero');
                   return;
                 }
                 onShowDistrictPicker(true);
@@ -363,10 +371,10 @@ export const ProfileForm = ({
           </View>
         </View>
 
-        {/* Modales para seleccion de ubicacion */}
+        {/* Location selection manners */}
         <LocationPickerModal
           visible={showProvincePicker}
-          title="Seleccionar Provincia"
+          title="📍 Seleccionar Provincia"
           data={provinces}
           loading={loadingLocations}
           onClose={() => onShowProvincePicker(false)}
@@ -375,7 +383,7 @@ export const ProfileForm = ({
 
         <LocationPickerModal
           visible={showCantonPicker}
-          title="Seleccionar Cantón"
+          title="🏘️ Seleccionar Cantón"
           data={cantons}
           loading={loadingLocations}
           onClose={() => onShowCantonPicker(false)}
@@ -384,7 +392,7 @@ export const ProfileForm = ({
 
         <LocationPickerModal
           visible={showDistrictPicker}
-          title="Seleccionar Distrito"
+          title="🏡 Seleccionar Distrito"
           data={districts}
           loading={loadingLocations}
           onClose={() => onShowDistrictPicker(false)}
@@ -396,15 +404,15 @@ export const ProfileForm = ({
 
         {/* Help section */}
         <View style={styles.helpSection}>
-          <Text style={styles.helpTitle}>Ayuda y soporte</Text>
+          <Text style={styles.helpTitle}>💕 Ayuda y soporte</Text>
 
           <TouchableOpacity style={styles.helpButton} onPress={handleHelpPress}>
-            <Text style={styles.helpText}>Guia rapida de la app</Text>
+            <Text style={styles.helpText}>💡 Guia rapida de la app</Text>
             <Text style={styles.arrow}>?</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.helpButton} onPress={handleContactPress}>
-            <Text style={styles.helpText}>Escribir a soporte</Text>
+            <Text style={styles.helpText}>💌 Escribir a soporte</Text>
             <Text style={styles.arrow}>{'>'}</Text>
           </TouchableOpacity>
 
@@ -413,11 +421,11 @@ export const ProfileForm = ({
 
         {/* Save */}
         <TouchableOpacity style={styles.saveButton} onPress={onSave} disabled={saving}>
-          <Text style={styles.saveButtonText}>{saving ? 'Guardando...' : 'Guardar cambios'}</Text>
+          <Text style={styles.saveButtonText}>{saving ? '💫 Guardando...' : '✨ Guardar cambios'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutButton} onPress={onSignOut}>
-          <Text style={styles.logoutButtonText}>Cerrar sesion</Text>
+          <Text style={styles.logoutButtonText}>🚪Cerrar sesion</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -433,7 +441,8 @@ export const LoadingScreen = ({ theme }: LoadingScreenProps) => {
   
   return (
     <SafeAreaView style={styles.loadingContainer}>
-      <Text style={{ color: theme === 'dark' ? '#fff' : '#000' }}>Cargando perfil...</Text>
+      <ActivityIndicator size="large" color="#FF6B9D" />
+      <Text style={styles.loadingScreenText}>✨ Cargando tu perfil...</Text>
     </SafeAreaView>
   );
 };
