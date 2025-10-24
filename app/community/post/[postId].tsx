@@ -70,7 +70,9 @@ export default function PostDetailScreen() {
           const userRef = doc(db, 'users', postData.userId);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-            setPostAuthor(userSnap.data().displayName || 'Usuario Anónimo');
+            const userData = userSnap.data();
+            const authorName = [userData.nombre, userData.apellidos].filter(Boolean).join(' ') || 'Usuario Anónimo';
+            setPostAuthor(authorName);
           } else {
             setPostAuthor('Usuario Anónimo');
           }
@@ -100,7 +102,9 @@ export default function PostDetailScreen() {
           const userRef = doc(db, 'users', userId);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-            newCommentAuthors[userId] = userSnap.data().displayName || 'Usuario Anónimo';
+            const userData = userSnap.data();
+            const authorName = [userData.nombre, userData.apellidos].filter(Boolean).join(' ') || 'Usuario Anónimo';
+            newCommentAuthors[userId] = authorName;
           } else {
             newCommentAuthors[userId] = 'Usuario Anónimo';
           }

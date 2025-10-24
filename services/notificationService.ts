@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../FireBase';
 
 // Configura cómo se deben manejar las notificaciones cuando la app está en primer plano.
 Notifications.setNotificationHandler({
@@ -33,6 +35,31 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+/**
+ * Gets the Expo push token and saves it to the user's Firestore document.
+ */
+export async function registerForPushNotificationsAsync() {
+  const hasPermissions = await requestNotificationPermissions();
+  if (!hasPermissions) {
+    console.error('Could not get push token because notification permissions were not granted.');
+    return;
+  }
+
+  const token = (await Notifications.getDevicePushTokenAsync()).data;
+  console.log('User push token:', token);
+
+  const user = auth.currentUser;
+  if (user && token) {
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      await setDoc(userDocRef, { pushToken: token }, { merge: true });
+      console.log('Successfully saved push token for user:', user.uid);
+    } catch (error) {
+      console.error('Error saving push token to Firestore:', error);
+    }
+  }
 }
 
 /**

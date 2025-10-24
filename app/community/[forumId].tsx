@@ -65,8 +65,15 @@ export default function ForumDetailScreen() {
         const usersSnapshot = await getDocs(usersQuery);
         const usersData = Object.fromEntries(usersSnapshot.docs.map(doc => [doc.id, doc.data()]));
 
+        console.log('Users Data:', usersData);
+
         fetchedPosts.forEach(post => {
-          post.username = usersData[post.userId]?.displayName || 'Usuario Anónimo';
+          const userData = usersData[post.userId];
+          if (userData?.firstName && userData?.lastName) {
+            post.username = `${userData.firstName} ${userData.lastName}`;
+          } else {
+            post.username = userData?.displayName || userData?.nombre || 'Usuario Anónimo';
+          }
         });
       }
 
