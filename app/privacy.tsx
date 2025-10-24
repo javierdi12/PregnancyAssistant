@@ -1,36 +1,37 @@
 import { ThemedView } from '@/components/ThemedView';
 import {
   HomeIndicator,
-  PrivacyContent,
+  PrivacyContent, // Main privacy content
   PrivacyHeader,
   PrivacyModal,
 } from '@/components/privacy/PrivacyComponents';
-import { usePrivacy } from '@/hooks/usePrivacy';
+
+import { usePrivacy } from '@/hooks/usePrivacy'; // Import custom hooks to handle privacy
 import { usePrivacyPolicy } from '@/hooks/usePrivacyPolicy';
 import { router } from 'expo-router';
-import { StatusBar, useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native'; // Import StatusBar and hook to detect color scheme
 
 export default function PrivacyScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
   const {
-    dataUsageAccepted,
-    setDataUsageAccepted,
-    personalizedAdsAccepted,
-    setPersonalizedAdsAccepted,
-    showPrivacyModal,
-    setShowPrivacyModal,
-    handleAcceptNecessary,
-    handleAcceptAll,
-    handleContinue,
+    dataUsageAccepted,          // Essential data acceptance status
+    setDataUsageAccepted,      // Function to update data acceptance
+    personalizedAdsAccepted,    // Personalized ad acceptance status
+    setPersonalizedAdsAccepted,// Function to update ad acceptance
+    showPrivacyModal,          // Status for displaying the privacy modal
+    setShowPrivacyModal,       // Function to update the status of the modal
+    handleAcceptNecessary,      // Function that accepts only essential data
+    handleAcceptAll,           // Function that accepts everything
+    handleContinue,           // Function that saves choices and moves forward
   } = usePrivacy();
 
-  // Obtener el contenido de la política desde Firebase
+  // Get the policy content from Firebase
   const { privacyContent, loading } = usePrivacyPolicy();
 
-  // Función para manejar el botón de retroceso
-   const handleBack = () => {
+ 
+   const handleBack = () => { // Function to handle the back button
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -51,9 +52,9 @@ export default function PrivacyScreen() {
         personalizedAdsAccepted={personalizedAdsAccepted}
         setPersonalizedAdsAccepted={setPersonalizedAdsAccepted}
         onShowPrivacyModal={() => setShowPrivacyModal(true)}
-        onAcceptNecessary={handleAcceptNecessary}
-        onAcceptAll={handleAcceptAll}
-        onContinue={handleContinue}
+        onAcceptNecessary={handleAcceptNecessary} // Function to accept only necessary items
+        onAcceptAll={handleAcceptAll} // Function to accept everything
+        onContinue={handleContinue} // Function to continue
       />
       
       <PrivacyModal

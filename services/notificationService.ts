@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../FireBase';
 
 // Configura cómo se deben manejar las notificaciones cuando la app está en primer plano.
 Notifications.setNotificationHandler({
@@ -36,6 +38,31 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 }
 
 /**
+ * Gets the Expo push token and saves it to the user's Firestore document.
+ */
+export async function registerForPushNotificationsAsync() {
+  const hasPermissions = await requestNotificationPermissions();
+  if (!hasPermissions) {
+    console.error('Could not get push token because notification permissions were not granted.');
+    return;
+  }
+
+  const token = (await Notifications.getDevicePushTokenAsync()).data;
+  console.log('User push token:', token);
+
+  const user = auth.currentUser;
+  if (user && token) {
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      await setDoc(userDocRef, { pushToken: token }, { merge: true });
+      console.log('Successfully saved push token for user:', user.uid);
+    } catch (error) {
+      console.error('Error saving push token to Firestore:', error);
+    }
+  }
+}
+
+/**
  * Programa una notificación local para una fecha y hora específicas.
  * @param {Date} date - La fecha y hora en que se debe mostrar la notificación.
  * @param {string} title - El título de la notificación (ej. "Recordatorio de Cita").
@@ -57,7 +84,7 @@ export async function scheduleAppointmentNotification(date: Date, title: string,
     content: {
       title,
       body,
-      data: { screen: 'tracking' }, // Dato opcional para redirigir al usuario si toca la notificación
+      data: { screen: 'citas' }, // Dato opcional para redirigir al usuario si toca la notificación
     },
     trigger,
   });

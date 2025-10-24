@@ -70,6 +70,7 @@ export default function CreatePostScreen() {
         imageUrl = await uploadImage(selectedImage);
       }
 
+      console.log('Auth User:', auth.currentUser);
       await addDoc(collection(db, 'posts'), {
         forumId: forumId,
         userId: auth.currentUser.uid,
