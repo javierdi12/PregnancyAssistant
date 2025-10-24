@@ -3,11 +3,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import {
   ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
   View,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import { auth } from '../../FireBase';
 import { registerForPushNotificationsAsync } from '../../services/notificationService';
@@ -15,7 +13,7 @@ import { getOrCreateUserProfile } from '../../services/userService';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
+import { getHomeStyles } from '@/styles';
 import { Feather } from '@expo/vector-icons';
 
 export default function HomeScreen() {
@@ -38,127 +36,102 @@ export default function HomeScreen() {
     return unsubscribe;
   }, []);
 
-  const styles = getStyles(isDarkMode);
+  const styles = getHomeStyles(isDarkMode);
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView>
-        <ThemedText style={styles.title}>Home</ThemedText>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Header with decorative elements */}
+            <View style={styles.headerContainer}>
+              <ThemedText style={styles.subtitle}></ThemedText>
+              <ThemedText style={styles.title}>Bienvenida</ThemedText>
+            
+            </View>
+    
+            {/* Daily Tip Card with emoji */}
+            <View style={styles.tipCard}>
+              
+              <ThemedText style={styles.tipTitle}>✨ Mi Embarazo ✨</ThemedText>
+              <ThemedText style={styles.tipText}>
+             Te acompañaremos durante esta hermosa etapa
+              </ThemedText>
+            </View>
 
-        {/* Daily Tip Section */}
-        <View style={styles.card}>
-          <ThemedText style={styles.cardTitle}>Daily Tip</ThemedText>
-          <ThemedText style={styles.cardText}>
-            Stay hydrated by drinking plenty of water throughout the day. It&apos;s important for both you and your baby.
-          </ThemedText>
+        {/* Quick Actions Grid - Updated for better centering */}
+        <View style={styles.actionsGrid}>
+          {/* Row 1 */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardPink]}
+              onPress={() => router.push('/(tabs)/tracking')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="heart" size={28} color="#FF6B9D" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Seguimiento</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>del Embarazo</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardPurple]}
+              onPress={() => router.push('/(tabs)/citas')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="calendar" size={28} color="#B794F6" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Gestión</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>de Citas</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 2 */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardCoral]}
+              onPress={() => router.push('/(tabs)/ai-assistant')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="message-circle" size={28} color="#FF8C69" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Asistente</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>Inteligente</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardMint]}
+              onPress={() => router.push('/community')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="users" size={28} color="#63D5A8" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Comunidad</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>de Mamás</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 3 */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardBlue]}
+              onPress={() => router.push('/(tabs)/map')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="map-pin" size={28} color="#7BB4E8" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Mapa</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>de Servicios</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardRose]}
+              onPress={() => router.push('/(tabs)/profile')}>
+              <View style={styles.actionIconContainer}>
+                <Feather name="user" size={28} color="#F4A4C5" />
+              </View>
+              <ThemedText style={styles.actionTitle}>Mi Perfil</ThemedText>
+              <ThemedText style={styles.actionSubtitle}>Personal</ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Quick Actions Section */}
-        <View style={styles.quickActionsContainer}>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/tracking')}>
-            <Feather name="list" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Pregnancy Tracking</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/citas')}>
-            <Feather name="calendar" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Gestión de Citas</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/ai-assistant')}>
-            <Feather name="cpu" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>AI Assistant</ThemedText>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/community')}>
-            <Feather name="feather" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Community</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/map')}>
-            <Feather name="map" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Map</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => router.push('/(tabs)/profile')}>
-            <Feather name="user" size={24} color={styles.quickActionButtonText.color} />
-            <ThemedText style={styles.quickActionButtonText}>Profile</ThemedText>
-          </TouchableOpacity>
-        </View>
+        {/* Decorative bottom spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </ThemedView>
   );
 }
-
-const getStyles = (isDarkMode: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      alignItems: 'center',
-      backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
-    },
-    title: {
-      fontSize: 32,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginBottom: 30,
-      color: isDarkMode ? '#FFFFFF' : '#1A237E',
-    },
-    card: {
-      backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 30,
-      width: '100%',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    cardTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 10,
-      color: isDarkMode ? Colors.dark.tint : Colors.light.tint,
-    },
-    cardText: {
-      fontSize: 16,
-      lineHeight: 24,
-      color: isDarkMode ? '#E0E0E0' : '#424242',
-    },
-    quickActionsContainer: {
-      marginTop: 20,
-      marginBottom: 40,
-      width: '100%',
-    },
-    quickActionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
-      padding: 20,
-      borderRadius: 12,
-      width: '100%',
-      marginBottom: 25,
-    },
-    quickActionButtonText: {
-      marginLeft: 15,
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: isDarkMode ? '#FFFFFF' : '#333333',
-    },
-  });
-
