@@ -1,11 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import {
-  FacebookAuthProvider,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
-  signInWithCredential,
   signInWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
@@ -14,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Platform,
   SafeAreaView,
   Text,
   TextInput,
@@ -22,8 +19,8 @@ import {
   View,
   useColorScheme
 } from 'react-native';
-import { FACEBOOK_APP_ID } from '../constants/AuthFace';
 import { auth } from '../FireBase';
+import { useGoogleAuth } from '../services/googleAuth';
 import { getLoginStyles } from '../styles/login';
 import { getFirebaseErrorMessage, isValidEmail } from '../utils/firebaseError';
 
@@ -59,22 +56,46 @@ export default function LoginScreen() {
     isMountedRef.current = true;
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      console.log('Estado de autenticación cambiado:', user ? 'Usuario autenticado' : 'No autenticado');
+      
       if (user && isMountedRef.current) {
-        // if the user is logged in but email is not verified
-        if (!user.emailVerified) {
-          Alert.alert(
-            'Verifica tu correo',
-            'Te enviamos un email de verificación. Debes confirmarlo para continuar.'
-          );
-          await signOut(auth);
-          return;
-        }
+        try {
+          // Verificar el método de autenticación
+          const isPasswordAuth = user.providerData.some(p => p.providerId === 'password');
+          const isGoogleAuth = user.providerData.some(p => p.providerId === 'google.com');
+          
+          console.log('Método de autenticación:', 
+            isPasswordAuth ? 'Email/Password' : 
+            isGoogleAuth ? 'Google' : 
+            'Otro método');
 
-        const termsAccepted = await checkTermsAccepted();
-        if (termsAccepted) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/privacy');
+          // Solo verificar email para autenticación con password
+          if (isPasswordAuth && !user.emailVerified) {
+            Alert.alert(
+              'Verifica tu correo',
+              'Te enviamos un email de verificación. Debes confirmarlo para continuar.'
+            );
+            await signOut(auth);
+            return;
+          }
+
+          // Verificar términos aceptados para cualquier tipo de autenticación
+          const termsAccepted = await checkTermsAccepted();
+          console.log('Términos aceptados:', termsAccepted);
+
+          // Agregamos un pequeño delay para asegurar que la navegación se ejecute después de que Firebase esté listo
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          if (termsAccepted) {
+            console.log('Redirigiendo a tabs...');
+            await router.replace('/(tabs)');
+          } else {
+            console.log('Redirigiendo a privacy...');
+            await router.replace('/privacy');
+          }
+        } catch (error) {
+          console.error('Error en manejo de autenticación:', error);
+          Alert.alert('Error', 'Hubo un problema al procesar tu inicio de sesión');
         }
       }
     });
@@ -190,180 +211,17 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    Alert.alert('Google Sign-In', 'Esta funcionalidad requiere configuración adicional');
-  };
+  const { handleGoogleSignIn, isLoading: isGoogleLoading } = useGoogleAuth();
 
-  const handleFacebookSignIn = async () => {
-    safeSetIsLoading(true);
+  const handleGooglePress = async () => {
     try {
-      if (Platform.OS === 'web') {
-        await handleFacebookWebLogin();
-      } else {
-        Alert.alert(
-          'Login con Facebook',
-          'Para iOS y Android, necesitamos redirigirte al navegador para completar el login. ¿Quieres continuar?',
-          [
-            {
-              text: 'Cancelar',
-              style: 'cancel',
-              onPress: () => safeSetIsLoading(false)
-            },
-            {
-              text: 'Continuar',
-              onPress: () => handleFacebookMobileRedirect()
-            }
-          ]
-        );
-      }
-    } catch (error: any) {
-      console.error('Error en login Facebook:', error);
-      Alert.alert('Error', 'No se pudo iniciar sesión con Facebook');
-      safeSetIsLoading(false);
-    }
-  };
-
-  const handleFacebookMobileRedirect = () => {
-    const redirectUri = `https://${window.location.hostname || 'localhost'}`;
-    const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
-    window.location.href = authUrl;
-  };
-
-  const handleFacebookWebLogin = async () => {
-    const redirectUri = window.location.origin;
-    const authUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email&display=popup`;
-
-    const width = 600;
-    const height = 600;
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
-
-    const popup = window.open(
-      authUrl,
-      'Facebook Login',
-      `width=${width},height=${height},top=${top},left=${left}`
-    );
-
-    if (!popup) {
-      Alert.alert('Error', 'Por favor permite ventanas emergentes para este sitio');
-      safeSetIsLoading(false);
-      return;
-    }
-
-    popupRef.current = popup;
-    let popupClosed = false;
-
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-    intervalRef.current = setInterval(() => {
-      try {
-        if (!isMountedRef.current) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          return;
-        }
-
-        if (popup.closed) {
-          popupClosed = true;
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          safeSetIsLoading(false);
-          return;
-        }
-
-        if (popup.location.href.startsWith(redirectUri)) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          const url = popup.location.href;
-
-          const hashParams = new URLSearchParams(url.split('#')[1]);
-          const accessToken = hashParams.get('access_token');
-          const facebookError = hashParams.get('error');
-          const errorReason = hashParams.get('error_reason');
-
-          if (accessToken) {
-            handleFacebookToken(accessToken);
-          } else if (facebookError) {
-            const errorDescription = hashParams.get('error_description') || 'Error desconocido';
-
-            if (errorDescription.includes('Invalid Scopes') || errorReason === 'user_denied') {
-              Alert.alert(
-                'Permisos insuficientes',
-                'Para usar el inicio de sesión con Facebook, necesitamos acceso a tu dirección de email. Por favor, acepta todos los permisos solicitados.'
-              );
-            } else {
-              Alert.alert('Error de Facebook', errorDescription);
-            }
-            safeSetIsLoading(false);
-          }
-
-          popup.close();
-        }
-      } catch (intervalError) {
-        console.error('Interval error:', intervalError);
-      }
-    }, 100) as unknown as IntervalHandle;
-
-    timeoutRef.current = setTimeout(() => {
-      if (!popupClosed && isMountedRef.current) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (popup && !popup.closed) {
-          popup.close();
-        }
-        Alert.alert('Error', 'Tiempo de espera agotado');
-        safeSetIsLoading(false);
-      }
-    }, 120000) as unknown as TimeoutHandle;
-  };
-
-  const fetchFacebookUserInfo = async (accessToken: string) => {
-    try {
-      const response = await fetch(
-        `https://graph.facebook.com/v17.0/me?fields=id,name,email&access_token=${accessToken}`
-      );
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching Facebook user info:', error);
-      return {};
-    }
-  };
-
-  const handleFacebookToken = async (token: string) => {
-    try {
-      const userInfo = await fetchFacebookUserInfo(token);
-
-      if (!userInfo.email) {
-        Alert.alert('Error', 'No se pudo obtener el email de Facebook. Por favor, asegúrate de haber concedido los permisos necesarios.');
-        safeSetIsLoading(false);
-        return;
-      }
-
-      const credential = FacebookAuthProvider.credential(token);
-      const userCredential = await signInWithCredential(auth, credential);
-
-      if (userCredential.user && isMountedRef.current) {
-        const termsAccepted = await checkTermsAccepted();
-        if (termsAccepted) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/privacy');
-        }
-      }
-    } catch (err: any) {
-      console.error('Error en autenticación:', err);
-
-      if (err.code === 'auth/account-exists-with-different-credential') {
-        Alert.alert(
-          'Error',
-          'Ya existe una cuenta con el mismo email pero con un método de autenticación diferente.'
-        );
-      } else if (err.message.includes('invalid scopes')) {
-        Alert.alert(
-          'Error de configuración',
-          'La aplicación Facebook no tiene configurado correctamente el permiso de email.'
-        );
-      } else {
-        Alert.alert('Error', 'Error al autenticar con Facebook: ' + err.message);
-      }
-
+      safeSetIsLoading(true);
+      await handleGoogleSignIn();
+      // No redirijas aquí; el effect lo hace
+    } catch (e) {
+      console.error('Error en login con Google:', e);
+      Alert.alert('Error', 'No se pudo iniciar sesión con Google');
+    } finally {
       safeSetIsLoading(false);
     }
   };
@@ -413,19 +271,13 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={handleGoogleSignIn}
+              onPress={handleGooglePress}
+              disabled={isGoogleLoading}
             >
               <Text style={styles.optionText}>Ingresa con Google</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.optionButton}
-              onPress={handleFacebookSignIn}
-            >
-              <Text style={styles.optionText}>
-                Ingresa con Facebook
-              </Text>
-            </TouchableOpacity>
+            
           </View>
 
           <Text style={styles.divider}>o</Text>

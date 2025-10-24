@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pregnancyassistant",
+    "scheme": "com.preganassist.pregnancyassistant",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -28,6 +28,22 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "com.preganassist.pregnancyassistant",
+              "host": "*",
+              "pathPrefix": "/"
+            }
+          ]
+        }
       ]
     },
     "web": {
@@ -67,9 +83,14 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bbac3d54-6024-4b7f-971c-858061e75686"
+        "projectId": "6a27f78a-ee17-4d8c-8de2-648953d10eff"
+      },
+      "googleAuth": {
+        "androidClientId": "265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com",
+        "iosClientId": "",
+        "webClientId": "",
+        "expoClientId": ""
       }
-    },
-    "owner": "pedrojose"
+    }
   }
 }
