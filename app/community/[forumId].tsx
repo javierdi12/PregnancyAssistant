@@ -1,12 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useLocalSearchParams, Stack, Link, useRouter } from 'expo-router';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { db } from '../../FireBase'; // Adjust path as needed
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { Feather } from '@expo/vector-icons';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { collection, doc, getDoc, getDocs, orderBy, query, Timestamp, where } from 'firebase/firestore';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { db } from '../../FireBase'; // Adjust path as needed
 
 interface Post {
   id: string;
@@ -28,10 +27,15 @@ export default function ForumDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor({}, 'card');
-  const tintColor = useThemeColor({}, 'tint');
-  const borderColor = useThemeColor({}, 'border');
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
+  
+  // Colores consistentes con el index
+  const backgroundColor = isDarkMode ? "#1A1625" : "#FFF5F8";
+  const cardBackgroundColor = isDarkMode ? "#2A2335" : "#FFFFFF";
+  const tintColor = isDarkMode ? "#FFB6D9" : "#D6336C";
+  const borderColor = isDarkMode ? "#3D3147" : "#FFE4ED";
+  const textColor = isDarkMode ? "#D4A5C0" : "#6B5B62";
 
   const fetchForumAndPosts = async () => {
     if (!forumId || typeof forumId !== 'string') {
@@ -96,19 +100,32 @@ export default function ForumDetailScreen() {
   }, [forumId]);
 
   const renderPost = ({ item }: { item: Post }) => (
-    <View style={[styles.postItem, { backgroundColor: cardBackgroundColor, borderColor: borderColor }]}>
+    <View style={[styles.postItem, { 
+      backgroundColor: cardBackgroundColor, 
+      borderColor: borderColor,
+      shadowColor: isDarkMode ? "#000" : "#D6336C",
+      shadowOpacity: isDarkMode ? 0.3 : 0.12,
+    }]}>
       <TouchableOpacity onPress={() => router.push(`/profile/${item.userId}`)}>
-        <ThemedText type="subtitle">{item.username}</ThemedText>
+        <ThemedText style={{ 
+          fontSize: 16, 
+          fontWeight: '600',
+          color: tintColor
+        }}>
+          👤 {item.username}
+        </ThemedText>
       </TouchableOpacity>
       
       <TouchableOpacity onPress={() => router.push(`/community/post/${item.id}`)}>
-        <ThemedText style={{marginTop: 8}}>{item.text}</ThemedText>
+        <ThemedText style={[styles.postText, { color: textColor }]}>
+          {item.text}
+        </ThemedText>
         {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.postImage} />}
       </TouchableOpacity>
 
-      <View style={styles.postActions}>
-        <ThemedText>❤️ {item.likesCount}</ThemedText>
-        <ThemedText>💬 {item.commentsCount}</ThemedText>
+      <View style={[styles.postActions, { borderTopColor: borderColor }]}>
+        <ThemedText style={{ fontSize: 16, color: textColor }}>❤️ {item.likesCount}</ThemedText>
+        <ThemedText style={{ fontSize: 16, color: textColor }}>💬 {item.commentsCount}</ThemedText>
       </View>
     </View>
   );
@@ -144,7 +161,13 @@ export default function ForumDetailScreen() {
           ),
         }}
       />
-      <ThemedText type="title" style={[styles.title, { color: tintColor }]}>{forumName || 'Posts en el Foro'}</ThemedText>
+      <View style={[styles.welcomeCard, { backgroundColor: cardBackgroundColor, borderColor, shadowColor: isDarkMode ? "#000" : "#D6336C" }]}>
+        <ThemedText style={[styles.welcomeText, { color: textColor }]}>
+          Aquí encontrarás todas las publicaciones relacionadas con {forumName.toLowerCase() || 'este tema'}. 
+          ¡Participa y comparte tus experiencias!
+        </ThemedText>
+      </View>
+      <ThemedText type="title" style={[styles.title, { color: tintColor }]}>✨ {forumName || 'Posts en el Foro'} ✨</ThemedText>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -169,29 +192,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    marginBottom: 20,
+    fontSize: 28,
+    fontWeight: '700',
     textAlign: 'center',
-    fontSize: 24,
-    fontWeight: 'bold',
+    marginVertical: 16,
+    letterSpacing: 0.5,
   },
   listContent: {
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   postItem: {
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  postText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 12,
   },
   postImage: {
     width: '100%',
     height: 200,
-    borderRadius: 8,
-    marginTop: 10,
+    borderRadius: 12,
+    marginTop: 12,
   },
   postActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 10,
+    marginTop: 15,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  welcomeCard: {
+    borderRadius: 24,
+    padding: 24,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+  },
+  welcomeText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });

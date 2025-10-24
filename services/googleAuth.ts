@@ -13,7 +13,7 @@ export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com',
     //webClientId : '265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com',
-    redirectUri: 'com.preganassist.pregnancyassistant:/oauth2redirect/google',
+    redirectUri: 'com.preganassist.pregnancyassistant:/',
     selectAccount: true,
   });
 
