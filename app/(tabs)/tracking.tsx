@@ -1,37 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-  useColorScheme,
-  Platform,
-} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { onAuthStateChanged } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useColorScheme
+} from 'react-native';
 import * as NotificationService from '../../services/notificationService';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { auth, db } from '../../FireBase';
 import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp,
   Timestamp,
+  addDoc,
+  collection,
   doc,
   getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
+import { auth, db } from '../../FireBase';
 
 // Interfaces for data structures
 interface Vitals {
@@ -155,19 +154,20 @@ export default function TrackingScreen() {
     if (selectedDate && userId) {
       const today = new Date();
       if (selectedDate > today) {
-        Alert.alert("Fecha inválida", "La fecha de última menstruación no puede ser en el futuro.");
+        Alert.alert("📅 Fecha inválida", "La fecha de última menstruación no puede ser en el futuro. 💝")
         return;
       }
       setLmp(selectedDate);
       const userDocRef = doc(db, 'users', userId);
       setDoc(userDocRef, { lmp: selectedDate }, { merge: true });
+      Alert.alert("✨ ¡Perfecto!", "Tu fecha ha sido guardada. ¡Ahora puedes ver el desarrollo de tu bebé! 💕")
     }
   };
 
   const handleSaveVitals = async () => {
     if (!userId) return;
     if (!weight || !bloodPressure) {
-      Alert.alert('Error', 'Por favor, ingrese el peso y la presión arterial.');
+      Alert.alert("💭 Espera", "Por favor, ingresa tu peso y presión arterial para guardar tus signos vitales.")
       return;
     }
     try {
@@ -179,16 +179,16 @@ export default function TrackingScreen() {
       });
       setWeight('');
       setBloodPressure('');
-      Alert.alert('Éxito', '¡Signos vitales guardados con éxito!');
+      Alert.alert("✨ ¡Excelente!", "¡Tus signos vitales han sido guardados con éxito! 💗")
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron guardar los signos vitales.');
+      Alert.alert("😔 Error", "No se pudieron guardar tus signos vitales. Por favor, intenta de nuevo.")
     }
   };
 
   const handleSaveSymptom = async () => {
     if (!userId) return;
     if (!symptom) {
-      Alert.alert('Error', 'Por favor, ingrese un síntoma.');
+      Alert.alert("💭 Espera", "Por favor, describe tu síntoma para poder guardarlo.")
       return;
     }
     try {
@@ -198,9 +198,9 @@ export default function TrackingScreen() {
         createdAt: serverTimestamp(),
       });
       setSymptom('');
-      Alert.alert('Éxito', '¡Síntoma guardado con éxito!');
+     Alert.alert("✨ ¡Guardado!", "¡Tu síntoma ha sido registrado con éxito! 💝")
     } catch (error) {
-      Alert.alert('Error', 'No se pudo guardar el síntoma.');
+      Alert.alert("😔 Error", "No se pudo guardar el síntoma. Por favor, intenta de nuevo.")
     }
   };
   
@@ -217,22 +217,30 @@ export default function TrackingScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={isDarkMode ? Colors.dark.tint : Colors.light.tint} />
+       <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#FF6B9D" />
+        <ThemedText style={styles.loadingText}>✨ Cargando tu información...</ThemedText>
       </View>
     );
   }
 
   if (!userId) {
     return (
-        <ThemedView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-            <ThemedText>Por favor, inicia sesión para ver tus datos.</ThemedText>
-        </ThemedView>
+        <ThemedView style={[styles.container, styles.centerContent]}>
+        <Text style={styles.emptyIcon}>💝</Text>
+        <ThemedText style={styles.emptyText}>Por favor, inicia sesión para ver tu seguimiento de embarazo.</ThemedText>
+      </ThemedView>
     )
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollViewContent}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollViewContent}
+      showsVerticalScrollIndicator={false}
+    >
+
+      
       {/* Fetal Development Tracking */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
@@ -240,8 +248,8 @@ export default function TrackingScreen() {
           <>
             <Image source={getFetusImageSource(currentWeek)} style={styles.fetalImage} />
             <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
-            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
-              <Text style={styles.buttonText}>Cambiar FUM</Text>
+             <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.secondaryButtonText}>📅 Cambiar Fecha FUM</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -267,56 +275,134 @@ export default function TrackingScreen() {
       {/* Vitals Tracking */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Seguimiento de Signos Vitales</ThemedText>
-        <TextInput style={styles.input} placeholder="Peso (kg)" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} keyboardType="numeric" value={weight} onChangeText={setWeight} />
-        <TextInput style={styles.input} placeholder="Presión Arterial (ej. 120/80)" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} value={bloodPressure} onChangeText={setBloodPressure} />
-        <TouchableOpacity style={styles.button} onPress={handleSaveVitals}>
-          <Text style={styles.buttonText}>Guardar Signos Vitales</Text>
-        </TouchableOpacity>
-        <ThemedText style={styles.listTitle}>Historial de Signos Vitales</ThemedText>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>⚖️ Peso (kg)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: 65.5"
+            placeholderTextColor={isDarkMode ? "#6B5B62" : "#C4A4B4"}
+            keyboardType="numeric"
+            value={weight}
+            onChangeText={setWeight}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>💓 Presión Arterial</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: 120/80"
+            placeholderTextColor={isDarkMode ? "#6B5B62" : "#C4A4B4"}
+            value={bloodPressure}
+            onChangeText={setBloodPressure}
+              />
+          </View>
+
+          <TouchableOpacity style={styles.primaryButton} onPress={handleSaveVitals}>
+            <Text style={styles.primaryButtonText}>✨ Guardar Signos Vitales</Text>
+          </TouchableOpacity>
+
+        <ThemedText style={styles.listTitle}>📊 Historial</ThemedText>
         {vitalsList.length > 0 ? (
           vitalsList.map((item) => (
-            <View key={item.id} style={{ backgroundColor: isDarkMode ? '#333' : '#EEE', padding: 10, marginVertical: 4, borderRadius: 5 }}>
-              <Text style={{ color: isDarkMode ? 'white' : 'black' }}>Peso: {item.weight} kg, Presión: {item.bloodPressure}</Text>
-              <Text style={{ color: isDarkMode ? '#AAA' : '#555', fontSize: 12 }}>Fecha: {item.date}</Text>
+            <View key={item.id} style={styles.vitalsCard}>
+              <View style={styles.vitalsHeader}>
+                <View style={styles.vitalsBadge}>
+                  <Text style={styles.vitalsBadgeIcon}>⚖️</Text>
+                </View>
+                <View style={styles.vitalsInfo}>
+                  <Text style={styles.vitalsValue}>{item.weight} kg</Text>
+                  <Text style={styles.vitalsDate}>{item.date}</Text>
+                </View>
+              </View>
+              <View style={styles.vitalsRow}>
+                <Text style={styles.vitalsLabel}>💓 Presión:</Text>
+                <Text style={styles.vitalsValueSmall}>{item.bloodPressure}</Text>
+              </View>
             </View>
           ))
         ) : (
-          <Text style={styles.emptyListText}>No hay signos vitales registrados.</Text>
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateIcon}>📋</Text>
+            <Text style={styles.emptyStateTextSmall}>
+              Aún no has registrado signos vitales.{"\n"}¡Comienza a monitorear tu salud!
+            </Text>
+          </View>
         )}
-      </ThemedView>
+    </ThemedView>
 
-      {/* Symptom Logging */}
+       {/* Symptom Logging */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Registro de Síntomas</ThemedText>
-        <TextInput style={styles.input} placeholder="Describe tu síntoma" placeholderTextColor={isDarkMode ? '#ccc' : '#666'} value={symptom} onChangeText={setSymptom} />
-        <TouchableOpacity style={styles.button} onPress={handleSaveSymptom}>
-          <Text style={styles.buttonText}>Guardar Síntoma</Text>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>💭 Describe tu síntoma</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Ej: Náuseas matutinas leves..."
+            placeholderTextColor={isDarkMode ? "#6B5B62" : "#C4A4B4"}
+            multiline
+            numberOfLines={3}
+            value={symptom}
+            onChangeText={setSymptom}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleSaveSymptom}>
+          <Text style={styles.primaryButtonText}>✨ Guardar Síntoma</Text>
         </TouchableOpacity>
-        <ThemedText style={styles.listTitle}>Historial de Síntomas</ThemedText>
+
+        <ThemedText style={styles.listTitle}>📋 Historial de Síntomas</ThemedText>
         {symptomsList.length > 0 ? (
           symptomsList.map((item) => (
-            <View key={item.id} style={styles.listItem}>
-              <Text style={styles.logText}>{item.symptom}</Text>
-              <Text style={styles.logTextDate}>Fecha: {item.date}</Text>
+            <View key={item.id} style={styles.symptomCard}>
+              <View style={styles.symptomHeader}>
+                <Text style={styles.symptomDate}>{item.date}</Text>
+              </View>
+              <Text style={styles.symptomText}>{item.symptom}</Text>
             </View>
           ))
         ) : (
-          <Text style={styles.emptyListText}>No hay síntomas registrados.</Text>
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTextSmall}>
+              No has registrado síntomas aún.{"\n"}¡Registra cómo te sientes cada día!
+            </Text>
+          </View>
         )}
       </ThemedView>
     </ScrollView>
-  );
+  )
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#121212' : '#FAFAFA',
+    backgroundColor: isDarkMode ? '#121212' : '#FFF5F8',
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   scrollViewContent: {
     padding: 16,
     paddingBottom: 32,
   },
+  symptomCard: {
+      backgroundColor: isDarkMode ? "#3D3147" : "#FFF5F8",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDarkMode ? "#6B5B62" : "#FFE4ED",
+    },
+    symptomHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
   section: {
     marginVertical: 8,
     padding: 16,
@@ -342,12 +428,63 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     backgroundColor: '#ccc',
     resizeMode: 'contain',
   },
+   emptyStateCard: {
+      backgroundColor: isDarkMode ? "#3D3147" : "#FFF5F8",
+      borderRadius: 20,
+      padding: 32,
+      alignItems: "center",
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDarkMode ? "#6B5B62" : "#FFE4ED",
+    },
+    emptyStateIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    emptyStateText: {
+      fontSize: 15,
+      textAlign: "center",
+      color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+      lineHeight: 22,
+    },
+    emptyStateTextSmall: {
+      fontSize: 14,
+      textAlign: "center",
+      color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+      lineHeight: 20,
+    },
+    sectionIconContainer: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: isDarkMode ? "#3D3147" : "#FFE4ED",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+      alignSelf: "center",
+    },
+    sectionIcon: {
+      fontSize: 28,
+    },
   weekText: {
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
+  symptomIcon: {
+      fontSize: 24,
+    },
+    symptomDate: {
+      fontSize: 13,
+      color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+      fontWeight: "500",
+    },
+    symptomText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: isDarkMode ? "#D4A5C0" : "#6B5B62",
+    },
   input: {
     width: '100%',
     height: 50,
@@ -370,6 +507,15 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
     justifyContent: 'center',
   },
+  inputContainer: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDarkMode ? "#FFB6D9" : "#C62368",
+      marginBottom: 8,
+    },
   inputText: {
     color: isDarkMode ? '#FFFFFF' : '#333333',
     fontSize: 16,
@@ -386,6 +532,37 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
+  primaryButton: {
+      backgroundColor: isDarkMode ? "#B794F6" : "#FF6B9D",
+      padding: 16,
+      borderRadius: 20,
+      alignItems: "center",
+      marginBottom: 8,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 6,
+    },
+    primaryButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "700",
+      letterSpacing: 0.5,
+    },
+  secondaryButton: {
+    backgroundColor: isDarkMode ? "#3D3147" : "#FFE4ED",
+    padding: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: isDarkMode ? "#6B5B62" : "#FFCCE0",
+  },
+  secondaryButtonText: {
+    color: isDarkMode ? "#FFB6D9" : "#C62368",
+    fontSize: 15,
+    fontWeight: "600",
+  },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -398,6 +575,62 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 10,
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
+  vitalsCard: {
+      backgroundColor: isDarkMode ? "#3D3147" : "#FFF5F8",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDarkMode ? "#6B5B62" : "#FFE4ED",
+    },
+    vitalsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    vitalsBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDarkMode ? "#6B5B62" : "#FFE4ED",
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    vitalsBadgeIcon: {
+      fontSize: 20,
+    },
+    vitalsInfo: {
+      flex: 1,
+    },
+    vitalsValue: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDarkMode ? "#FFB6D9" : "#C62368",
+      marginBottom: 4,
+    },
+    vitalsDate: {
+      fontSize: 13,
+      color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+    },
+    vitalsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: isDarkMode ? "#6B5B62" : "#FFE4ED",
+    },
+    vitalsLabel: {
+      fontSize: 14,
+      color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+      fontWeight: "600",
+    },
+    vitalsValueSmall: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDarkMode ? "#FFB6D9" : "#C62368",
+    },
   listItem: {
     backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
     padding: 12,
@@ -424,5 +657,21 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     color: isDarkMode ? '#aaa' : '#777',
+  },
+  emptyIcon: {
+      fontSize: 64,
+      marginBottom: 16,
+  },
+    emptyText: {
+    fontSize: 16,
+    textAlign: "center",
+    color: isDarkMode ? "#D4A5C0" : "#9E7B8E",
+    lineHeight: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: isDarkMode ? "#FFB6D9" : "#D6336C",
+    fontWeight: "600",
   },
 });
