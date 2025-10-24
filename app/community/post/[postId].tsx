@@ -71,8 +71,11 @@ export default function PostDetailScreen() {
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            const authorName = [userData.nombre, userData.apellidos].filter(Boolean).join(' ') || 'Usuario Anónimo';
-            setPostAuthor(authorName);
+            if (userData?.nombre && userData?.apellidos) {
+              setPostAuthor(`${userData.nombre} ${userData.apellidos}`);
+            } else {
+              setPostAuthor(userData?.displayName || 'Usuario Anónimo');
+            }
           } else {
             setPostAuthor('Usuario Anónimo');
           }
@@ -103,8 +106,11 @@ export default function PostDetailScreen() {
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            const authorName = [userData.nombre, userData.apellidos].filter(Boolean).join(' ') || 'Usuario Anónimo';
-            newCommentAuthors[userId] = authorName;
+            if (userData?.nombre && userData?.apellidos) {
+              newCommentAuthors[userId] = `${userData.nombre} ${userData.apellidos}`;
+            } else {
+              newCommentAuthors[userId] = userData?.displayName || 'Usuario Anónimo';
+            }
           } else {
             newCommentAuthors[userId] = 'Usuario Anónimo';
           }
@@ -471,7 +477,7 @@ export default function PostDetailScreen() {
                 <ThemedText style={styles.buttonText}>Guardar</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: dangerColor }]}
+                style={[styles.button, { backgroundColor: dangerColor }]} 
                 onPress={() => setEditingPost(null)}
               >
                 <ThemedText style={styles.buttonText}>Cancelar</ThemedText>

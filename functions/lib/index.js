@@ -118,8 +118,6 @@ exports.sendNotificationOnNewComment = (0, firestore_1.onDocumentCreated)("comme
 });
 /**
  * Cloud Function to send a notification when a new post is created.
- * NOTE: The logic for determining WHO to send the notification to is not
- * implemented. This is a placeholder.
  */
 exports.sendNotificationOnNewPost = (0, firestore_1.onDocumentCreated)("posts/{postId}", async (event) => {
     const snapshot = event.data;
@@ -128,11 +126,26 @@ exports.sendNotificationOnNewPost = (0, firestore_1.onDocumentCreated)("posts/{p
         return;
     }
     const postData = snapshot.data();
-    const { postId } = event.params;
-    const { userId: authorId, text, forumId } = postData;
-    firebase_functions_1.logger.log(`New post ${postId} created by ${authorId} in forum ${forumId}: ${text}`);
-    // --- Target Audience Logic (Placeholder) ---
-    firebase_functions_1.logger.warn("sendNotificationOnNewPost is a placeholder. " +
-        "No notification will be sent until target audience logic is implemented.");
+    const { userId: authorId, text } = postData;
+    // Get the author's name
+    const authorDoc = await db.collection("users").doc(authorId).get();
+    const authorName = authorDoc.data()?.displayName || "Someone";
+    // Get all users' push tokens
+    const usersSnapshot = await db.collection("users").get();
+    const tokens = usersSnapshot.docs
+        .map((doc) => doc.data().pushToken)
+        .filter((token) => token);
+    if (tokens.length === 0) {
+        firebase_functions_1.logger.log("No push tokens found to send notifications.");
+        return;
+    }
+    const payload = {
+        notification: {
+            title: "New Post!",
+            body: `${authorName} has created a new post: "${text.substring(0, 100)}${text.length > 100 ? "..." : ""}"`,
+        },
+    };
+    firebase_functions_1.logger.log("Sending notification to all users:", payload);
+    await messaging.sendToDevice(tokens, payload);
 });
 //# sourceMappingURL=index.js.map

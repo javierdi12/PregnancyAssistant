@@ -146,8 +146,6 @@ export const sendNotificationOnNewComment = onDocumentCreated(
 
 /**
  * Cloud Function to send a notification when a new post is created.
- * NOTE: The logic for determining WHO to send the notification to is not
- * implemented. This is a placeholder.
  */
 export const sendNotificationOnNewPost = onDocumentCreated(
     "posts/{postId}",
@@ -158,17 +156,30 @@ export const sendNotificationOnNewPost = onDocumentCreated(
         return;
       }
       const postData = snapshot.data();
-      const {postId} = event.params;
+      const {userId: authorId, text} = postData;
 
-      const {userId: authorId, text, forumId} = postData;
+      // Get the author's name
+      const authorDoc = await db.collection("users").doc(authorId).get();
+      const authorName = authorDoc.data()?.displayName || "Someone";
 
-      logger.log(
-          `New post ${postId} created by ${authorId} in forum ${forumId}: ${text}`,
-      );
+      // Get all users' push tokens
+      const usersSnapshot = await db.collection("users").get();
+      const tokens = usersSnapshot.docs
+          .map((doc) => doc.data().pushToken)
+          .filter((token) => token);
 
-      // --- Target Audience Logic (Placeholder) ---
-      logger.warn(
-          "sendNotificationOnNewPost is a placeholder. " +
-          "No notification will be sent until target audience logic is implemented.",
-      );
+      if (tokens.length === 0) {
+        logger.log("No push tokens found to send notifications.");
+        return;
+      }
+
+      const payload: admin.messaging.MessagingPayload = {
+        notification: {
+          title: "New Post!",
+          body: `${authorName} has created a new post: "${text.substring(0, 100)}${text.length > 100 ? "..." : ""}"`,
+        },
+      };
+
+      logger.log("Sending notification to all users:", payload);
+      await messaging.sendToDevice(tokens, payload);
     });

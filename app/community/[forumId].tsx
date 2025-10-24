@@ -69,10 +69,10 @@ export default function ForumDetailScreen() {
 
         fetchedPosts.forEach(post => {
           const userData = usersData[post.userId];
-          if (userData?.firstName && userData?.lastName) {
-            post.username = `${userData.firstName} ${userData.lastName}`;
+          if (userData?.nombre && userData?.apellidos) {
+            post.username = `${userData.nombre} ${userData.apellidos}`;
           } else {
-            post.username = userData?.displayName || userData?.nombre || 'Usuario Anónimo';
+            post.username = userData?.displayName || 'Usuario Anónimo';
           }
         });
       }
