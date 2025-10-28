@@ -22,6 +22,11 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.preganassist.PregnancyAssistant",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBH_x0iW3SLjhWZq-9FhIueISfJQjqcTB4"
+        }
+      },
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",

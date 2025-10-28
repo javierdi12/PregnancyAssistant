@@ -67,6 +67,10 @@ exports.sendNotificationOnNewLike = (0, firestore_1.onDocumentCreated)("posts/{p
             title: "New Like on Your Post!",
             body: `${likerName} liked your post.`,
         },
+        data: {
+            postId: postId,
+            type: "like",
+        },
     };
     firebase_functions_1.logger.log("Sending notification payload:", payload);
     await messaging.sendToDevice(authorPushToken, payload);
@@ -112,6 +116,11 @@ exports.sendNotificationOnNewComment = (0, firestore_1.onDocumentCreated)("comme
             title: "New Comment on Your Post!",
             body: `${commenterName}: "${text.substring(0, 100)}${text.length > 100 ? "..." : ""}"`,
         },
+        data: {
+            postId: postId,
+            commentId: event.params.commentId,
+            type: "comment",
+        },
     };
     firebase_functions_1.logger.log("Sending notification payload:", payload);
     await messaging.sendToDevice(authorPushToken, payload);
@@ -143,6 +152,10 @@ exports.sendNotificationOnNewPost = (0, firestore_1.onDocumentCreated)("posts/{p
         notification: {
             title: "New Post!",
             body: `${authorName} has created a new post: "${text.substring(0, 100)}${text.length > 100 ? "..." : ""}"`,
+        },
+        data: {
+            postId: snapshot.id,
+            type: "new_post",
         },
     };
     firebase_functions_1.logger.log("Sending notification to all users:", payload);
