@@ -6,8 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 
-// The api hi
-const GEMINI_API_KEY = 'AIzaSyD1W6x7JQQwOfokUmSfbfhQalPnQ9KriQA'; 
+// The api key for Gemini
+const GEMINI_API_KEY = 'AIzaSyCEqC-8B5IFw3f9y7hEL_wHRKXROLeUb_c';
 
 
 export default function AIAssistantScreen() {
@@ -56,7 +56,7 @@ const handleAskAI = async () => {
   try {
     //  URL CORRECTA con modelo actualizado
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {

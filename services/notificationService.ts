@@ -78,7 +78,10 @@ export async function scheduleAppointmentNotification(date: Date, title: string,
   }
 
   // Programa la notificación para que se dispare en la fecha indicada.
-  const trigger = date;
+  const trigger = {
+    type: 'date',
+    date: date,
+  };
 
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
@@ -159,8 +162,11 @@ export async function scheduleDailyFoodReminders(): Promise<void> {
       title: nextReminder.title,
       body: nextReminder.body,
     },
-    trigger: nextTriggerDate,
+    trigger: { type: 'date', date: nextTriggerDate },
   });
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  console.log('Todas las notificaciones programadas:', scheduled);
 }
 
 /**
