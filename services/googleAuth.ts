@@ -1,9 +1,10 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import * as React from 'react';
 import { Alert } from 'react-native';
-import { auth } from '../FireBase';
+import { auth, db } from '../FireBase';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -12,10 +13,41 @@ export function useGoogleAuth() {
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com',
-    //webClientId : '265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com',
+    webClientId : '265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com',
+    iosClientId: '265408256669-m5obohtolsm35un9pou61007hn3iqdmk.apps.googleusercontent.com',
     redirectUri: 'com.preganassist.pregnancyassistant:/',
     selectAccount: true,
   });
+
+  // Función para guardar perfil de Google en Firestore
+  const saveGoogleUserProfile = async (userId: string, userEmail: string | null, displayName: string | null, photoURL: string | null) => {
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        email: userEmail,
+        displayName: displayName || userEmail?.split('@')[0] || 'Usuario Google',
+        role: 'google', // Rol por defecto para usuarios de Google
+        photoURL: photoURL,
+        provider: 'google',
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        emailVerified: true, // Google ya verifica el email
+        // Default empty fields for profile
+        firstName: '',
+        lastName: '',
+        dateOfBirth: null,
+        province: '',
+        canton: '',
+        district: '',
+        // Profile completion status
+        profileCompleted: false
+      }, { merge: true }); // merge: true para no sobreescribir datos existentes
+      
+      console.log('Perfil de usuario Google guardado en Firestore');
+    } catch (error) {
+      console.error('Error guardando perfil de Google en Firestore:', error);
+      throw error;
+    }
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -29,8 +61,17 @@ export function useGoogleAuth() {
           if (!idToken) throw new Error('No se recibió idToken de Google');
 
           const credential = GoogleAuthProvider.credential(idToken);
-          await signInWithCredential(auth, credential);
-          
+          const userCredential = await signInWithCredential(auth, credential);
+          const user = userCredential.user;
+
+          // Guardar perfil del usuario en Firestore
+          await saveGoogleUserProfile(
+            user.uid, 
+            user.email, 
+            user.displayName, 
+            user.photoURL
+          );
+
           // Esperamos un momento para asegurarnos que Firebase procese la autenticación
           await new Promise(resolve => setTimeout(resolve, 500));
           
