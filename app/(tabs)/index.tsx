@@ -30,7 +30,7 @@ export default function HomeScreen() {
         registerForPushNotificationsAsync();
       } else {
         // User is signed out, redirect to welcome screen
-        router.replace('/');
+        router.replace('../../index');
       }
     });
     return unsubscribe;

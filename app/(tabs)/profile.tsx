@@ -1,9 +1,11 @@
 import { LoadingScreen, ProfileForm } from '@/components/profile/ProfileComponents'; // Import the components of the profile screen
 import { useProfile } from '@/hooks/useProfile'; // Import the hook that handles the profile logic
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage to save authentication status locally
+import { router } from 'expo-router';
 import { signOut } from 'firebase/auth'; // Import function to log out of Firebase Auth
 import { Alert, useColorScheme } from 'react-native';
 import { auth } from '../../FireBase';
+
 
 const AUTH_STATUS_KEY = 'auth_logged_in';// Import the Firebase authentication instance
 
@@ -40,14 +42,19 @@ export default function ProfileScreen() {
     handlePhotoChange,
   } = useProfile();
 
-  const handleSignOut = async () => {// Function to log out the user
-    try {
-      await signOut(auth);// Log out of Firebase Auth
-      await AsyncStorage.setItem(AUTH_STATUS_KEY, 'false');
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo cerrar sesion. ' + String(error));
-    }
-  };
+const handleSignOut = async () => {
+  try {
+    await signOut(auth);
+    await AsyncStorage.setItem(AUTH_STATUS_KEY, 'false');
+
+    // Resetear completamente la navegación
+    router.dismissAll();
+    router.replace('/');
+    
+  } catch (error) {
+    Alert.alert('Error', 'No se pudo cerrar sesión. ' + String(error));
+  }
+};
 
   if (loading) {
     return <LoadingScreen theme={theme} />;
