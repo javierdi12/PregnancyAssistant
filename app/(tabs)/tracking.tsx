@@ -16,8 +16,6 @@ import * as NotificationService from '../../services/notificationService';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
-import { getStyles } from '../../styles/tracking.styles';
 import {
   Timestamp,
   addDoc,
@@ -31,6 +29,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { auth, db } from '../../FireBase';
+import { getStyles } from '../../styles/tracking.styles';
 
 // Interfaces for data structures
 interface Vitals {
@@ -60,6 +59,8 @@ export default function TrackingScreen() {
   const [lmp, setLmp] = useState<Date | null>(null);
   const [currentWeek, setCurrentWeek] = useState<number | null>(null);
   const [showLmpPicker, setShowLmpPicker] = useState(false);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [daysInWeek, setDaysInWeek] = useState<number>(0);
 
   // State for Vitals
   const [weight, setWeight] = useState<string>('');
@@ -132,20 +133,32 @@ export default function TrackingScreen() {
     };
   }, [userId]);
 
-  // Calculate week when LMP changes
+  // Calculate week, days, and due date when LMP changes
   useEffect(() => {
     if (lmp) {
       const today = new Date();
       if (lmp > today) {
         setCurrentWeek(0);
+        setDaysInWeek(0);
+        setDueDate(null);
         return;
       }
       const diffTime = Math.abs(today.getTime() - lmp.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const currentWeekNumber = Math.floor(diffDays / 7);
+      const additionalDays = diffDays % 7;
+      
       setCurrentWeek(currentWeekNumber);
+      setDaysInWeek(additionalDays);
+      
+      // Calculate due date (LMP + 280 days = 40 weeks)
+      const estimatedDueDate = new Date(lmp);
+      estimatedDueDate.setDate(estimatedDueDate.getDate() + 280);
+      setDueDate(estimatedDueDate);
     } else {
       setCurrentWeek(null);
+      setDaysInWeek(0);
+      setDueDate(null);
     }
   }, [lmp]);
 
@@ -206,13 +219,64 @@ export default function TrackingScreen() {
   
   const getFetusImageSource = (week: number | null) => {
     if (week === null) return require('../../assets/images/fetus/placeholder.png');
+    
+    // Semanas disponibles: 1-7, 9-17 (sin la 8), 25, 35, 39
     switch (week) {
       case 1: return require('../../assets/images/fetus/semana_1.png');
       case 2: return require('../../assets/images/fetus/semana_2.png');
       case 3: return require('../../assets/images/fetus/semana_3.png');
       case 4: return require('../../assets/images/fetus/semana_4.png');
-      default: return require('../../assets/images/fetus/placeholder.png');
+      case 5: return require('../../assets/images/fetus/semana_5.png');
+      case 6: return require('../../assets/images/fetus/semana_6.png');
+      case 7: return require('../../assets/images/fetus/semana_7.png');
+      case 8: return require('../../assets/images/fetus/semana_7.png'); // No existe 8, usar 7
+      case 9: return require('../../assets/images/fetus/semana_9.png');
+      case 10: return require('../../assets/images/fetus/semana_10.png');
+      case 11: return require('../../assets/images/fetus/semana_11.png');
+      case 12: return require('../../assets/images/fetus/semana_12.png');
+      case 13: return require('../../assets/images/fetus/semana_13.png');
+      case 14: return require('../../assets/images/fetus/semana_14.png');
+      case 15: return require('../../assets/images/fetus/semana_15.png');
+      case 16: return require('../../assets/images/fetus/semana_16.png');
+      case 17: return require('../../assets/images/fetus/semana_17.png');
     }
+    
+    // Semanas 18-24 → mostrar semana 17
+    if (week >= 18 && week <= 24) {
+      return require('../../assets/images/fetus/semana_17.png');
+    }
+    
+    // Semana 25
+    if (week === 25) {
+      return require('../../assets/images/fetus/semana_25.png');
+    }
+    
+    // Semanas 26-34 → mostrar semana 25
+    if (week >= 26 && week <= 34) {
+      return require('../../assets/images/fetus/semana_25.png');
+    }
+    
+    // Semana 35
+    if (week === 35) {
+      return require('../../assets/images/fetus/semana_35.png');
+    }
+    
+    // Semanas 36-38 → mostrar semana 35
+    if (week >= 36 && week <= 38) {
+      return require('../../assets/images/fetus/semana_35.png');
+    }
+    
+    // Semana 39
+    if (week === 39) {
+      return require('../../assets/images/fetus/semana_39.png');
+    }
+    
+    // Semana 40+ → mostrar semana 39
+    if (week >= 40) {
+      return require('../../assets/images/fetus/semana_39.png');
+    }
+    
+    return require('../../assets/images/fetus/placeholder.png');
   };
 
   if (loading) {
@@ -243,22 +307,59 @@ export default function TrackingScreen() {
       
       {/* Fetal Development Tracking */}
       <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Seguimiento del Desarrollo Fetal</ThemedText>
         {lmp && currentWeek !== null ? (
           <>
+            {/* Main Week Display */}
+            <View style={styles.weekBanner}>
+              <Text style={styles.weekBannerEmoji}>🎀</Text>
+              <ThemedText style={styles.weekBannerText}>
+                Semana {currentWeek}
+                {daysInWeek > 0 && ` + ${daysInWeek} día${daysInWeek > 1 ? 's' : ''}`}
+              </ThemedText>
+              <Text style={styles.weekBannerEmoji}>🎀</Text>
+            </View>
+            
+            {/* Fetal Image */}
             <Image source={getFetusImageSource(currentWeek)} style={styles.fetalImage} />
-            <ThemedText style={styles.weekText}>Semana Actual: {currentWeek}</ThemedText>
-             <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowLmpPicker(true)}>
-              <Text style={styles.secondaryButtonText}>📅 Cambiar Fecha FUM</Text>
+            
+            {/* Due Date Info */}
+            {dueDate && (
+              <View style={styles.dueDateCard}>
+                <Text style={styles.dueDateLabel}>📅 Fecha estimada de parto</Text>
+                <Text style={styles.dueDateText}>
+                  {dueDate.toLocaleDateString('es-ES', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </Text>
+              </View>
+            )}
+            
+            {/* Small update button */}
+            <TouchableOpacity 
+              style={styles.updateDateLink} 
+              onPress={() => setShowLmpPicker(true)}
+            >
+              <Text style={styles.updateDateLinkText}>
+                ✏️ Actualizar fecha de inicio
+              </Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
-            <ThemedText style={styles.emptyListText}>
-              Para comenzar, por favor ingresa la fecha de tu última menstruación.
-            </ThemedText>
-            <TouchableOpacity style={styles.button} onPress={() => setShowLmpPicker(true)}>
-              <Text style={styles.buttonText}>Ingresar FUM</Text>
+            <View style={styles.emptyStateCard}>
+              <Text style={styles.emptyStateIcon}>👶</Text>
+              <ThemedText style={styles.sectionTitle}>
+                ¡Comienza tu seguimiento!
+              </ThemedText>
+              <ThemedText style={styles.emptyListText}>
+                Para empezar a ver el desarrollo de tu bebé semana a semana, 
+                necesitamos saber cuándo comenzó tu último período menstrual.
+              </ThemedText>
+            </View>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => setShowLmpPicker(true)}>
+              <Text style={styles.primaryButtonText}>📅 Ingresar fecha de inicio</Text>
             </TouchableOpacity>
           </>
         )}
