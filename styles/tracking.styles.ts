@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { StyleSheet } from 'react-native';
 
 export const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
@@ -46,13 +46,60 @@ export const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 16,
     color: isDarkMode ? Colors.dark.text : Colors.light.text,
   },
+  weekBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
+  weekBannerEmoji: {
+    fontSize: 32,
+    marginHorizontal: 12,
+  },
+  weekBannerText: {
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: isDarkMode ? '#FFB6D9' : '#C62368',
+  },
   fetalImage: {
     width: '100%',
-    height: 250,
-    borderRadius: 8,
-    marginBottom: 16,
-    backgroundColor: '#ccc',
+    height: 280,
+    borderRadius: 16,
+    marginBottom: 20,
+    backgroundColor: isDarkMode ? '#2a2a2a' : '#F5F5F5',
     resizeMode: 'contain',
+  },
+  dueDateCard: {
+    backgroundColor: isDarkMode ? '#3D3147' : '#FFE4ED',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#6B5B62' : '#FFCCE0',
+  },
+  dueDateLabel: {
+    fontSize: 14,
+    color: isDarkMode ? '#D4A5C0' : '#9E7B8E',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  dueDateText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: isDarkMode ? '#FFB6D9' : '#C62368',
+    textAlign: 'center',
+  },
+  updateDateLink: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  updateDateLinkText: {
+    fontSize: 14,
+    color: isDarkMode ? '#D4A5C0' : '#9E7B8E',
+    textDecorationLine: 'underline',
   },
    emptyStateCard: {
       backgroundColor: isDarkMode ? "#3D3147" : "#FFF5F8",

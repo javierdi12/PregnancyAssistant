@@ -31,7 +31,7 @@ export function useGoogleAuth() {
         provider: 'google',
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
-        emailVerified: true, // Google ya verifica el email
+        emailVerified: true, 
         // Default empty fields for profile
         firstName: '',
         lastName: '',
@@ -41,7 +41,7 @@ export function useGoogleAuth() {
         district: '',
         // Profile completion status
         profileCompleted: false
-      }, { merge: true }); // merge: true para no sobreescribir datos existentes
+      }, { merge: true }); // merge true for updating existing users
       
       console.log('Perfil de usuario Google guardado en Firestore');
     } catch (error) {
