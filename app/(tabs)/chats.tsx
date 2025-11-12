@@ -7,12 +7,12 @@ import { Stack, useRouter } from 'expo-router';
 import { collection, doc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface Chat {
@@ -152,7 +152,6 @@ export default function ChatsListScreen() {
     }
     
     // FALLBACK: Usar datos guardados en el chat (pueden estar desactualizados)
-    // CORRECCIÓN: Intentar construir nombre completo desde los datos del chat
     const chatName = chat.participantNames?.[otherUserId] || 'Usuario';
     
     return {

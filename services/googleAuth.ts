@@ -14,6 +14,7 @@ export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '265408256669-f5n7gm8osgrhv8k0jjb5nan1md0um38s.apps.googleusercontent.com',
     webClientId : '265408256669-0iorks9oqjvmt9i5ngq55m3mudnfkdam.apps.googleusercontent.com',
+    iosClientId: '265408256669-m5obohtolsm35un9pou61007hn3iqdmk.apps.googleusercontent.com',
     redirectUri: Platform.OS === 'web' 
       ? window.location.origin 
       : 'com.preganassist.pregnancyassistant:/',

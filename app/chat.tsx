@@ -3,29 +3,30 @@ import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/FireBase';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useUserProfileView } from '@/hooks/useUserProfileView'; // AÑADIR ESTA IMPORTACIÓN
+import { useUserProfileView } from '@/hooks/useUserProfileView';
+import { NotificationMessageService } from '@/services/notificationMessageService';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
-    addDoc,
-    collection,
-    doc,
-    onSnapshot,
-    orderBy,
-    query,
-    serverTimestamp,
-    updateDoc
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc
 } from 'firebase/firestore';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface Message {
@@ -41,7 +42,6 @@ export default function ChatScreen() {
   const router = useRouter();
   const { currentUser } = useCurrentUser();
   
-  // AÑADIR: Obtener el perfil actualizado del otro usuario
   const { user: otherUserProfile, loading: loadingProfile } = useUserProfileView(
     otherUserId && typeof otherUserId === 'string' ? otherUserId : undefined
   );
@@ -107,6 +107,21 @@ export default function ChatScreen() {
         lastMessageTime: serverTimestamp()
       });
 
+      // AÑADIR: Enviar notificación al otro usuario (solo en mobile)
+      if (otherUserId && typeof otherUserId === 'string') {
+        const senderName = currentUser.displayName || 
+          (currentUser.email ? currentUser.email.split('@')[0] : 'Alguien');
+        
+        NotificationMessageService.sendNotificationToUser(
+          otherUserId,
+          newMessage.trim(),
+          senderName,
+          chatId
+        ).catch(error => {
+          console.error('Error enviando notificación:', error);
+        });
+      }
+
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -160,7 +175,6 @@ export default function ChatScreen() {
     );
   };
 
-  // AÑADIR: Usar el nombre completo del perfil actualizado
   const displayName = otherUserProfile?.nombre 
     ? `${otherUserProfile.nombre} ${otherUserProfile.apellidos || ''}`.trim()
     : (otherUserName && typeof otherUserName === 'string' 
@@ -181,7 +195,6 @@ export default function ChatScreen() {
     );
   }
 
-  // AÑADIR: Incluir loadingProfile en la condición de carga
   if (loading || loadingProfile) {
     return (
       <ThemedView style={[styles.centered, { backgroundColor }]}>
@@ -194,7 +207,7 @@ export default function ChatScreen() {
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <Stack.Screen options={{ 
-        title: displayName, // CAMBIAR: Usar displayName en lugar de decodedUserName
+        title: displayName,
         headerBackTitle: 'Chats'
       }} />
       
@@ -214,7 +227,7 @@ export default function ChatScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <ThemedText style={styles.emptyStateText}>
-                💬 Inicia la conversación con {displayName} {/* CAMBIAR: Usar displayName */}
+                💬 Inicia la conversación con {displayName}
               </ThemedText>
               <ThemedText style={styles.emptyStateSubtext}>
                 Escribe un mensaje para comenzar el chat
@@ -256,34 +269,16 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  container: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
-  messagesList: {
-    padding: 15,
-    paddingBottom: 10,
-  },
-  messageContainer: {
-    marginBottom: 12,
-  },
-  currentUserContainer: {
-    alignItems: 'flex-end',
-  },
-  otherUserContainer: {
-    alignItems: 'flex-start',
-  },
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  container: { flex: 1 },
+  flex: { flex: 1 },
+  messagesList: { padding: 15, paddingBottom: 10 },
+  messageContainer: { marginBottom: 12 },
+  currentUserContainer: { alignItems: 'flex-end' },
+  otherUserContainer: { alignItems: 'flex-start' },
+  messageBubble: { 
+    maxWidth: '80%', 
+    padding: 12, 
     borderRadius: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -291,87 +286,41 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  currentUserBubble: {
-    borderBottomRightRadius: 4,
+  currentUserBubble: { borderBottomRightRadius: 4 },
+  otherUserBubble: { borderBottomLeftRadius: 4, borderWidth: 1 },
+  messageText: { fontSize: 16, lineHeight: 20 },
+  timestamp: { fontSize: 11, marginTop: 4, alignSelf: 'flex-end' },
+  inputContainer: { 
+    flexDirection: 'row', 
+    padding: 15, 
+    borderTopWidth: 1, 
+    alignItems: 'flex-end' 
   },
-  otherUserBubble: {
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
+  textInput: { 
+    flex: 1, 
+    borderWidth: 1, 
+    borderRadius: 20, 
+    paddingHorizontal: 15, 
+    paddingVertical: 10, 
+    paddingTop: 10, 
+    marginRight: 10, 
+    maxHeight: 100, 
+    fontSize: 16 
   },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
+  sendButton: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  timestamp: {
-    fontSize: 11,
-    marginTop: 4,
-    alignSelf: 'flex-end',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 15,
-    borderTopWidth: 1,
-    alignItems: 'flex-end',
-  },
-  textInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    paddingTop: 10,
-    marginRight: 10,
-    maxHeight: 100,
-    fontSize: 16,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
-  },
-  sendButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    marginBottom: 8,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    opacity: 0.5,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 14,
-    opacity: 0.7,
-  },
+  sendButtonDisabled: { opacity: 0.5 },
+  sendButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50 },
+  emptyStateText: { fontSize: 16, marginBottom: 8, opacity: 0.7, textAlign: 'center' },
+  emptyStateSubtext: { fontSize: 14, opacity: 0.5, textAlign: 'center' },
+  errorText: { fontSize: 16, marginBottom: 20, textAlign: 'center' },
+  button: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
+  buttonText: { color: 'white', fontWeight: 'bold' },
+  loadingText: { marginTop: 10, fontSize: 14, opacity: 0.7 },
 });
