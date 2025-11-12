@@ -53,7 +53,6 @@ export default function ChatsListScreen() {
     const unsubscribe = onSnapshot(userRef, (userDoc) => {
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        // CORRECCIÓN: Concatenar nombre y apellido
         const fullName = userData.nombre && userData.apellidos 
           ? `${userData.nombre} ${userData.apellidos}`
           : userData.nombre || 'Usuario';
@@ -62,7 +61,7 @@ export default function ChatsListScreen() {
           ...prev,
           [userId]: {
             id: userId,
-            name: fullName, // Usar nombre completo
+            name: fullName,
             photoURL: userData.photoURL || '',
             profileData: userData
           }
@@ -115,7 +114,6 @@ export default function ChatsListScreen() {
           }
         });
         
-        // Guardar las funciones de unsubscribe para limpiar después
         setUnsubscribes(prev => [...prev, ...newUnsubscribes]);
       }, 
       (error) => {
@@ -124,10 +122,8 @@ export default function ChatsListScreen() {
       }
     );
 
-    // Cleanup function
     return () => {
       unsubscribeChats();
-      // Limpiar todas las suscripciones a perfiles de usuario
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
   }, [currentUser]);
@@ -141,7 +137,6 @@ export default function ChatsListScreen() {
       return { id: '', name: 'Usuario', photoURL: '' };
     }
 
-    // PRIORIDAD: Usar datos actualizados del perfil en tiempo real
     const updatedUser = otherUsers[otherUserId];
     if (updatedUser) {
       return {
@@ -151,7 +146,6 @@ export default function ChatsListScreen() {
       };
     }
     
-    // FALLBACK: Usar datos guardados en el chat (pueden estar desactualizados)
     const chatName = chat.participantNames?.[otherUserId] || 'Usuario';
     
     return {

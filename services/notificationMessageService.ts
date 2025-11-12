@@ -9,6 +9,7 @@ export interface NotificationMessageData {
   sound?: boolean;
 }
 
+// CLASE PARA NOTIFICACIONES PUSH (SOLO PUSH)
 export class NotificationMessageService {
   // Verificar si estamos en móvil
   static isMobile(): boolean {
@@ -17,7 +18,10 @@ export class NotificationMessageService {
 
   // Obtener el token push de un usuario desde Firestore
   static async getUserPushToken(userId: string): Promise<string | null> {
-    if (!this.isMobile()) return null;
+    if (!this.isMobile()) {
+      console.log('🔕 Web: Notificaciones deshabilitadas');
+      return null;
+    }
     
     try {
       const userRef = doc(db, 'users', userId);
@@ -99,14 +103,14 @@ export class NotificationMessageService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log('✅ Notificación enviada exitosamente');
+      console.log('✅ Notificación push enviada exitosamente');
     } catch (error) {
       console.error('❌ Error sending push notification:', error);
       throw error;
     }
   }
 
-  // Enviar notificación a un usuario específico
+  // Enviar notificación a un usuario específico (SOLO PUSH)
   static async sendNotificationToUser(
     userId: string, 
     message: string, 
@@ -119,18 +123,19 @@ export class NotificationMessageService {
     }
 
     try {
-      console.log(`📨 Enviando notificación a usuario: ${userId}`);
+      console.log(`📨 Intentando enviar notificación PUSH a usuario: ${userId}`);
       const userToken = await this.getUserPushToken(userId);
       
       if (userToken) {
         await this.sendPushNotification(userToken, message, senderName, chatId, userId);
-        console.log('✅ Notificación enviada exitosamente a:', userId);
+        console.log('✅ Notificación PUSH enviada exitosamente a:', userId);
       } else {
-        console.log('❌ Usuario no tiene token push registrado:', userId);
+        console.log('❌ Usuario no tiene token push registrado. NO se enviará notificación:', userId);
+        // No se envía nada si no hay token
       }
     } catch (error) {
       console.error('❌ Error sending notification to user:', error);
-      throw error;
+      // No se envía nada si hay error
     }
   }
 
@@ -139,22 +144,5 @@ export class NotificationMessageService {
     if (!this.isMobile()) return false;
     const token = await this.getUserPushToken(userId);
     return token !== null;
-  }
-
-  // Eliminar token push de un usuario
-  static async removeUserPushToken(userId: string): Promise<void> {
-    if (!this.isMobile()) return;
-    
-    try {
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { 
-        expoPushToken: null,
-        pushTokenUpdatedAt: null 
-      }, { merge: true });
-      console.log('🗑️ Push token eliminado para usuario:', userId);
-    } catch (error) {
-      console.error('❌ Error removing push token:', error);
-      throw error;
-    }
   }
 }
