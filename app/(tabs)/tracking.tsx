@@ -229,7 +229,7 @@ export default function TrackingScreen() {
       case 5: return require('../../assets/images/fetus/semana_5.png');
       case 6: return require('../../assets/images/fetus/semana_6.png');
       case 7: return require('../../assets/images/fetus/semana_7.png');
-      case 8: return require('../../assets/images/fetus/semana_7.png'); // No existe 8, usar 7
+      case 8: return require('../../assets/images/fetus/semana_7.png'); 
       case 9: return require('../../assets/images/fetus/semana_9.png');
       case 10: return require('../../assets/images/fetus/semana_10.png');
       case 11: return require('../../assets/images/fetus/semana_11.png');
@@ -241,37 +241,37 @@ export default function TrackingScreen() {
       case 17: return require('../../assets/images/fetus/semana_17.png');
     }
     
-    // Semanas 18-24 → mostrar semana 17
+    
     if (week >= 18 && week <= 24) {
       return require('../../assets/images/fetus/semana_17.png');
     }
     
-    // Semana 25
+    
     if (week === 25) {
       return require('../../assets/images/fetus/semana_25.png');
     }
     
-    // Semanas 26-34 → mostrar semana 25
+    
     if (week >= 26 && week <= 34) {
       return require('../../assets/images/fetus/semana_25.png');
     }
     
-    // Semana 35
+    
     if (week === 35) {
       return require('../../assets/images/fetus/semana_35.png');
     }
     
-    // Semanas 36-38 → mostrar semana 35
+    
     if (week >= 36 && week <= 38) {
       return require('../../assets/images/fetus/semana_35.png');
     }
     
-    // Semana 39
+    
     if (week === 39) {
       return require('../../assets/images/fetus/semana_39.png');
     }
     
-    // Semana 40+ → mostrar semana 39
+    
     if (week >= 40) {
       return require('../../assets/images/fetus/semana_39.png');
     }

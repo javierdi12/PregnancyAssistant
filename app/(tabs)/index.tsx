@@ -57,6 +57,32 @@ export default function HomeScreen() {
               </ThemedText>
             </View>
 
+            {/* Premium Banner */}
+            <TouchableOpacity 
+              style={styles.premiumBanner}
+              onPress={() => router.push('../plans')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.premiumIconBadge}>
+                <ThemedText style={{ fontSize: 26 }}>👑</ThemedText>
+              </View>
+              <View style={styles.premiumContent}>
+                <ThemedText style={styles.premiumTitle}>
+                  Desbloquea funciones Premium
+                </ThemedText>
+                <View style={styles.premiumButton}>
+                  <ThemedText style={styles.premiumButtonText}>
+                    Ver planes
+                  </ThemedText>
+                  <Feather 
+                    name="arrow-right" 
+                    size={16} 
+                    color={isDarkMode ? '#B794F6' : '#FF6B9D'} 
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+
         {/* Quick Actions Grid - Updated for better centering */}
         <View style={styles.actionsGrid}>
           {/* Row 1 */}
