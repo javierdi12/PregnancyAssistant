@@ -6,10 +6,11 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getChatsListStyles } from '@/styles/chatStyle';
 import { Stack, useRouter } from 'expo-router';
-import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   TouchableOpacity,
@@ -24,6 +25,8 @@ interface Chat {
   lastMessage: string;
   lastMessageTime: any;
   createdAt: any;
+  lastMessageSender?: string;
+  lastMessageRead?: boolean;
 }
 
 interface OtherUser {
@@ -43,15 +46,15 @@ export default function ChatsListScreen() {
   const [otherUsers, setOtherUsers] = useState<{[key: string]: OtherUser}>({});
   const [loading, setLoading] = useState(true);
   const [unsubscribes, setUnsubscribes] = useState<(() => void)[]>([]);
+  const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   
   const tintColor = useThemeColor({}, 'tint');
   const defaultAvatar = require('@/assets/images/default-avatar.png');
 
-  // Usar el color scheme del sistema
   const theme = colorScheme || 'light';
   const styles = getChatsListStyles(theme);
 
-  // Function to check if user is online
+  // Función para checkear estado online
   const checkUserOnlineStatus = async (userId: string): Promise<boolean> => {
     try {
       const userRef = doc(db, 'users', userId);
@@ -66,7 +69,6 @@ export default function ChatsListScreen() {
           const now = new Date();
           const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
           
-          // Considerar online si se conectó en los últimos 5 minutos
           return diffInMinutes < 5;
         }
       }
@@ -77,7 +79,7 @@ export default function ChatsListScreen() {
     }
   };
 
-  // Function to subscribe to changes in a user's profile
+  // Función para suscribirse a cambios de perfil
   const subscribeToUserProfile = (userId: string) => {
     const userRef = doc(db, 'users', userId);
     
@@ -88,7 +90,6 @@ export default function ChatsListScreen() {
           ? `${userData.nombre} ${userData.apellidos}`
           : userData.nombre || 'Usuario';
         
-        // Verificar estado online
         const isOnline = await checkUserOnlineStatus(userId);
         
         setOtherUsers(prev => ({
@@ -132,7 +133,9 @@ export default function ChatsListScreen() {
             participantPhotos: data.participantPhotos || {},
             lastMessage: data.lastMessage || 'Inicia la conversación',
             lastMessageTime: data.lastMessageTime || data.createdAt,
-            createdAt: data.createdAt
+            createdAt: data.createdAt,
+            lastMessageSender: data.lastMessageSender,
+            lastMessageRead: data.lastMessageRead
           } as Chat;
         });
         
@@ -140,7 +143,6 @@ export default function ChatsListScreen() {
         setChats(validChats);
         setLoading(false);
 
-        // Subscribe to other users' profiles
         const newUnsubscribes: (() => void)[] = [];
         for (const chat of validChats) {
           const otherUserId = chat.participants?.find(id => id !== currentUser.uid);
@@ -163,6 +165,45 @@ export default function ChatsListScreen() {
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
   }, [currentUser]);
+
+  // Función para eliminar una conversación
+  const deleteChat = async (chatId: string, chatName: string) => {
+    Alert.alert(
+      'Eliminar conversación',
+      `¿Estás segura de que quieres eliminar la conversación con ${chatName}?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingChatId(chatId);
+            try {
+              // Eliminar el chat de la colección de chats
+              const chatRef = doc(db, 'chats', chatId);
+              await deleteDoc(chatRef);
+              
+              console.log('✅ Conversación eliminada:', chatId);
+              // No necesitamos hacer setChats porque Firestore se actualiza automáticamente
+            } catch (error) {
+              console.error('Error eliminando conversación:', error);
+              Alert.alert('Error', 'No se pudo eliminar la conversación');
+            } finally {
+              setDeletingChatId(null);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Función para manejar el press largo (eliminar)
+  const handleLongPress = (chat: Chat, otherUser: OtherUser) => {
+    deleteChat(chat.id, otherUser.name);
+  };
 
   const getOtherParticipant = (chat: Chat) => {
     if (!currentUser) return { id: '', name: 'Usuario', photoURL: '', isOnline: false };
@@ -229,25 +270,44 @@ export default function ChatsListScreen() {
     
     if (!otherUser.id) return null;
     
+    const isMyMessage = item.lastMessageSender === currentUser?.uid;
+    const isRead = item.lastMessageRead === true;
+    const isDeleting = deletingChatId === item.id;
+    
     return (
       <TouchableOpacity 
-        style={styles.chatItem}
-        onPress={() => router.push({
-          pathname: '/chat',
-          params: { 
-            chatId: item.id,
-            otherUserId: otherUser.id, 
-            otherUserName: encodeURIComponent(otherUser.name) 
+        style={[
+          styles.chatItem,
+          isDeleting && { opacity: 0.5 }
+        ]}
+        onPress={() => {
+          if (!isDeleting) {
+            router.push({
+              pathname: '/chat',
+              params: { 
+                chatId: item.id,
+                otherUserId: otherUser.id, 
+                otherUserName: encodeURIComponent(otherUser.name) 
+              }
+            });
           }
-        })}
+        }}
+        onLongPress={() => handleLongPress(item, otherUser)}
+        delayLongPress={500}
+        disabled={isDeleting}
       >
+        {isDeleting && (
+          <View style={styles.deletingOverlay}>
+            <ActivityIndicator size="small" color={tintColor} />
+          </View>
+        )}
+        
         <View style={styles.avatarContainer}>
           <Image
             source={otherUser.photoURL ? { uri: otherUser.photoURL } : defaultAvatar}
             style={styles.avatar}
             defaultSource={defaultAvatar}
           />
-          <View style={otherUser.isOnline ? styles.onlineIndicator : styles.offlineIndicator} />
         </View>
         <View style={styles.chatInfo}>
           <ThemedText style={styles.chatName}>{otherUser.name}</ThemedText>
@@ -259,8 +319,14 @@ export default function ChatsListScreen() {
           <ThemedText style={styles.time}>
             {formatTime(item.lastMessageTime)}
           </ThemedText>
-          {item.lastMessage && (
-            <View style={styles.messageIndicator} />
+          
+          {isMyMessage && item.lastMessage && (
+            <ThemedText style={[
+              styles.readStatus,
+              { color: isRead ? '#007AFF' : '#8E8E93' }
+            ]}>
+              {isRead ? '✓✓' : '✓'}
+            </ThemedText>
           )}
         </View>
       </TouchableOpacity>
@@ -306,7 +372,7 @@ export default function ChatsListScreen() {
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>Tus Conversaciones</ThemedText>
         <ThemedText style={styles.headerSubtitle}>
-          Conecta con tu comunidad de apoyo
+          Mantén presionado para eliminar una conversación
         </ThemedText>
       </View>
       
