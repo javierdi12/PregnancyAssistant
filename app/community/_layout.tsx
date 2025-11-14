@@ -6,7 +6,7 @@ export default function CommunityLayout() {
       <Stack.Screen 
         name="index" 
         options={{ 
-          title: 'Community', 
+          title: 'Comunidad', 
           headerShown: true
         }} 
       />
