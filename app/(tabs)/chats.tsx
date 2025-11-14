@@ -1,16 +1,17 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/FireBase';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { getChatsListStyles } from '@/styles/chatStyle';
 import { Stack, useRouter } from 'expo-router';
-import { collection, doc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  StyleSheet,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -30,32 +31,65 @@ interface OtherUser {
   name: string;
   photoURL: string;
   profileData?: any;
+  isOnline?: boolean;
+  lastSeen?: any;
 }
 
 export default function ChatsListScreen() {
   const router = useRouter();
   const { currentUser } = useCurrentUser();
+  const colorScheme = useColorScheme();
   const [chats, setChats] = useState<Chat[]>([]);
   const [otherUsers, setOtherUsers] = useState<{[key: string]: OtherUser}>({});
   const [loading, setLoading] = useState(true);
   const [unsubscribes, setUnsubscribes] = useState<(() => void)[]>([]);
-
-  const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor({}, 'card');
+  
   const tintColor = useThemeColor({}, 'tint');
-  const borderColor = useThemeColor({}, 'border');
   const defaultAvatar = require('@/assets/images/default-avatar.png');
 
-  // Función para suscribirse a los cambios de perfil de un usuario
+  // Usar el color scheme del sistema
+  const theme = colorScheme || 'light';
+  const styles = getChatsListStyles(theme);
+
+  // Function to check if user is online
+  const checkUserOnlineStatus = async (userId: string): Promise<boolean> => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const lastSeen = userData.lastSeen;
+        
+        if (lastSeen) {
+          const lastSeenDate = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+          const now = new Date();
+          const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+          
+          // Considerar online si se conectó en los últimos 5 minutos
+          return diffInMinutes < 5;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking online status:', error);
+      return false;
+    }
+  };
+
+  // Function to subscribe to changes in a user's profile
   const subscribeToUserProfile = (userId: string) => {
     const userRef = doc(db, 'users', userId);
     
-    const unsubscribe = onSnapshot(userRef, (userDoc) => {
+    const unsubscribe = onSnapshot(userRef, async (userDoc) => {
       if (userDoc.exists()) {
         const userData = userDoc.data();
         const fullName = userData.nombre && userData.apellidos 
           ? `${userData.nombre} ${userData.apellidos}`
           : userData.nombre || 'Usuario';
+        
+        // Verificar estado online
+        const isOnline = await checkUserOnlineStatus(userId);
         
         setOtherUsers(prev => ({
           ...prev,
@@ -63,7 +97,9 @@ export default function ChatsListScreen() {
             id: userId,
             name: fullName,
             photoURL: userData.photoURL || '',
-            profileData: userData
+            profileData: userData,
+            isOnline,
+            lastSeen: userData.lastSeen
           }
         }));
       }
@@ -86,7 +122,7 @@ export default function ChatsListScreen() {
     );
 
     const unsubscribeChats = onSnapshot(q, 
-      (snapshot) => {
+      async (snapshot) => {
         const chatsData = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
@@ -104,15 +140,15 @@ export default function ChatsListScreen() {
         setChats(validChats);
         setLoading(false);
 
-        // Suscribirse a los perfiles de los otros usuarios
+        // Subscribe to other users' profiles
         const newUnsubscribes: (() => void)[] = [];
-        validChats.forEach(chat => {
+        for (const chat of validChats) {
           const otherUserId = chat.participants?.find(id => id !== currentUser.uid);
           if (otherUserId && !otherUsers[otherUserId]) {
             const unsubscribe = subscribeToUserProfile(otherUserId);
             newUnsubscribes.push(unsubscribe);
           }
-        });
+        }
         
         setUnsubscribes(prev => [...prev, ...newUnsubscribes]);
       }, 
@@ -129,12 +165,12 @@ export default function ChatsListScreen() {
   }, [currentUser]);
 
   const getOtherParticipant = (chat: Chat) => {
-    if (!currentUser) return { id: '', name: 'Usuario', photoURL: '' };
+    if (!currentUser) return { id: '', name: 'Usuario', photoURL: '', isOnline: false };
     
     const otherUserId = chat.participants?.find(id => id !== currentUser.uid);
     
     if (!otherUserId) {
-      return { id: '', name: 'Usuario', photoURL: '' };
+      return { id: '', name: 'Usuario', photoURL: '', isOnline: false };
     }
 
     const updatedUser = otherUsers[otherUserId];
@@ -142,7 +178,8 @@ export default function ChatsListScreen() {
       return {
         id: otherUserId,
         name: updatedUser.name,
-        photoURL: updatedUser.photoURL
+        photoURL: updatedUser.photoURL,
+        isOnline: updatedUser.isOnline || false
       };
     }
     
@@ -151,7 +188,8 @@ export default function ChatsListScreen() {
     return {
       id: otherUserId,
       name: chatName,
-      photoURL: chat.participantPhotos?.[otherUserId] || ''
+      photoURL: chat.participantPhotos?.[otherUserId] || '',
+      isOnline: false
     };
   };
 
@@ -193,7 +231,7 @@ export default function ChatsListScreen() {
     
     return (
       <TouchableOpacity 
-        style={[styles.chatItem, { backgroundColor: cardBackgroundColor, borderColor }]}
+        style={styles.chatItem}
         onPress={() => router.push({
           pathname: '/chat',
           params: { 
@@ -203,30 +241,41 @@ export default function ChatsListScreen() {
           }
         })}
       >
-        <Image
-          source={otherUser.photoURL ? { uri: otherUser.photoURL } : defaultAvatar}
-          style={styles.avatar}
-          defaultSource={defaultAvatar}
-        />
+        <View style={styles.avatarContainer}>
+          <Image
+            source={otherUser.photoURL ? { uri: otherUser.photoURL } : defaultAvatar}
+            style={styles.avatar}
+            defaultSource={defaultAvatar}
+          />
+          <View style={otherUser.isOnline ? styles.onlineIndicator : styles.offlineIndicator} />
+        </View>
         <View style={styles.chatInfo}>
           <ThemedText style={styles.chatName}>{otherUser.name}</ThemedText>
           <ThemedText style={styles.lastMessage} numberOfLines={1}>
             {item.lastMessage || 'Inicia la conversación'}
           </ThemedText>
         </View>
-        <ThemedText style={styles.time}>
-          {formatTime(item.lastMessageTime)}
-        </ThemedText>
+        <View style={styles.timeContainer}>
+          <ThemedText style={styles.time}>
+            {formatTime(item.lastMessageTime)}
+          </ThemedText>
+          {item.lastMessage && (
+            <View style={styles.messageIndicator} />
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
 
   if (!currentUser) {
     return (
-      <ThemedView style={[styles.centered, { backgroundColor }]}>
+      <ThemedView style={styles.centered}>
+        <View style={styles.pregnancyIcon}>
+          <ThemedText style={styles.pregnancyIconText}>🤰</ThemedText>
+        </View>
         <ThemedText style={styles.errorText}>Debes iniciar sesión para ver tus chats</ThemedText>
         <TouchableOpacity 
-          style={[styles.button, { backgroundColor: tintColor }]} 
+          style={styles.button} 
           onPress={() => router.push('../index')}
         >
           <ThemedText style={styles.buttonText}>Iniciar sesión</ThemedText>
@@ -237,32 +286,46 @@ export default function ChatsListScreen() {
 
   if (loading) {
     return (
-      <ThemedView style={[styles.centered, { backgroundColor }]}>
-        <ActivityIndicator size="large" color={tintColor} />
-        <ThemedText style={styles.loadingText}>Cargando chats...</ThemedText>
+      <ThemedView style={styles.centered}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <ThemedText style={styles.loadingText}>Cargando tus conversaciones...</ThemedText>
+        </View>
       </ThemedView>
     );
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={styles.container}>
       <Stack.Screen options={{ 
         title: 'Mensajes',
-        headerBackTitle: 'Inicio'
+        headerBackTitle: 'Inicio',
+        headerTintColor: theme === 'dark' ? '#FFB6D9' : '#D6336C',
       }} />
+      
+      <View style={styles.header}>
+        <ThemedText style={styles.headerTitle}>Tus Conversaciones</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
+          Conecta con tu comunidad de apoyo
+        </ThemedText>
+      </View>
       
       <FlatList
         data={chats}
         renderItem={renderChat}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
+            <View style={styles.emptyStateIcon}>
+              <ThemedText style={styles.emptyStateEmoji}>💬</ThemedText>
+            </View>
             <ThemedText style={styles.emptyStateText}>
               No tienes conversaciones activas
             </ThemedText>
             <ThemedText style={styles.emptyStateSubtext}>
-              Visita un perfil de usuario para iniciar un chat
+              Visita un perfil de usuario para iniciar un chat y compartir experiencias
             </ThemedText>
           </View>
         }
@@ -270,83 +333,3 @@ export default function ChatsListScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  container: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 15,
-  },
-  chatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  chatInfo: {
-    flex: 1,
-  },
-  chatName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  lastMessage: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  time: {
-    fontSize: 12,
-    opacity: 0.5,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    marginBottom: 8,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    opacity: 0.5,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 14,
-    opacity: 0.7,
-  },
-});

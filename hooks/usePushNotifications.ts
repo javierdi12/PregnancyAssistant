@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { useCurrentUser } from './useCurrentUser';
 
-// Configurar el manejo de notificaciones (solo en mobile)
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -23,7 +23,7 @@ export const usePushNotifications = () => {
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
-    // Solo inicializar en móviles
+    
     if (Platform.OS === 'web') {
       console.log('🔕 Notificaciones deshabilitadas en web');
       return;
@@ -34,20 +34,20 @@ export const usePushNotifications = () => {
     registerForPushNotificationsAsync().then(token => {
       if (token && currentUser) {
         setExpoPushToken(token);
-        // Guardar el token usando el nuevo servicio
+         // Save the token using the new service
         NotificationMessageService.saveUserPushToken(currentUser.uid, token)
           .then(() => console.log('✅ Token guardado exitosamente'))
           .catch(error => console.error('❌ Error guardando token:', error));
       }
     });
 
-    // Escuchar notificaciones entrantes
+    // Listen for incoming notifications
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log('📩 Notificación recibida:', notification);
       setNotification(notification);
     });
 
-    // Escuchar clicks en notificaciones
+    // Hear clicks in notifications
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('👆 Notificación clickeada:', response);
     });
@@ -65,7 +65,7 @@ export const usePushNotifications = () => {
   return { expoPushToken, notification };
 };
 
-// Función para registrar el dispositivo para notificaciones
+// Function to register the device for notifications
 async function registerForPushNotificationsAsync() {
   try {
     console.log('📋 Solicitando permisos de notificación...');
