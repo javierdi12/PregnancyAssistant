@@ -7,7 +7,7 @@ import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { usePushNotifications } from '@/hooks/usePushNotifications'; // 🆕 AÑADE ESTO
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 import * as NotificationService from '../services/notificationService';
 

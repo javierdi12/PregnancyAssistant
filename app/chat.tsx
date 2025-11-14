@@ -1,15 +1,18 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/FireBase';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useUserProfileView } from '@/hooks/useUserProfileView';
 import { NotificationMessageService } from '@/services/notificationMessageService';
+import { getChatMessageStyles } from '@/styles/chatMessage';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   addDoc,
   collection,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -23,7 +26,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   View
@@ -41,6 +43,7 @@ export default function ChatScreen() {
   const { chatId, otherUserId, otherUserName } = useLocalSearchParams();
   const router = useRouter();
   const { currentUser } = useCurrentUser();
+  const colorScheme = useColorScheme();
   
   const { user: otherUserProfile, loading: loadingProfile } = useUserProfileView(
     otherUserId && typeof otherUserId === 'string' ? otherUserId : undefined
@@ -52,10 +55,10 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor({}, 'card');
+  // Usar el color scheme del sistema
+  const theme = colorScheme || 'light';
+  const styles = getChatMessageStyles(theme);
   const tintColor = useThemeColor({}, 'tint');
-  const borderColor = useThemeColor({}, 'border');
 
   useEffect(() => {
     if (!chatId || typeof chatId !== 'string' || !currentUser) {
@@ -87,6 +90,33 @@ export default function ChatScreen() {
     return () => unsubscribe();
   }, [chatId, currentUser]);
 
+  // Función para obtener el nombre del usuario actual desde Firestore
+  const getCurrentUserName = async (): Promise<string> => {
+    if (!currentUser) return 'Alguien';
+    
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        // Primero intenta con nombre + apellidos
+        if (userData.nombre && userData.apellidos) {
+          return `${userData.nombre} ${userData.apellidos}`.trim();
+        } else if (userData.nombre) {
+          return userData.nombre;
+        } else if (userData.display) {
+          return userData.display;
+        }
+      }
+    } catch (error) {
+      console.error('Error obteniendo nombre del usuario:', error);
+    }
+    
+    // Fallback al email o nombre por defecto
+    return currentUser.email ? currentUser.email.split('@')[0] : 'Alguien';
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !chatId || typeof chatId !== 'string' || !currentUser) return;
 
@@ -107,15 +137,16 @@ export default function ChatScreen() {
         lastMessageTime: serverTimestamp()
       });
 
-      // AÑADIR: Enviar notificación al otro usuario (solo en mobile)
+      // CORREGIDO: Enviar notificación con el senderId en lugar del nombre
       if (otherUserId && typeof otherUserId === 'string') {
-        const senderName = currentUser.displayName || 
-          (currentUser.email ? currentUser.email.split('@')[0] : 'Alguien');
+        // Obtener el nombre actual para logging (opcional)
+        const senderName = await getCurrentUserName();
+        console.log(`📤 Enviando notificación como: ${senderName}`);
         
         NotificationMessageService.sendNotificationToUser(
           otherUserId,
           newMessage.trim(),
-          senderName,
+          currentUser.uid, // ← CORRECCIÓN: Enviar el ID del remitente, no el nombre
           chatId
         ).catch(error => {
           console.error('Error enviando notificación:', error);
@@ -156,17 +187,16 @@ export default function ChatScreen() {
         <View style={[
           styles.messageBubble,
           isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
-          { backgroundColor: isCurrentUser ? tintColor : cardBackgroundColor }
         ]}>
           <ThemedText style={[
             styles.messageText,
-            { color: isCurrentUser ? 'white' : undefined }
+            isCurrentUser ? styles.currentUserMessageText : styles.otherUserMessageText
           ]}>
             {item.text}
           </ThemedText>
           <ThemedText style={[
             styles.timestamp,
-            { color: isCurrentUser ? 'rgba(255,255,255,0.7)' : '#666' }
+            isCurrentUser ? styles.currentUserTimestamp : styles.otherUserTimestamp
           ]}>
             {formatTime(item.timestamp)}
           </ThemedText>
@@ -183,10 +213,13 @@ export default function ChatScreen() {
 
   if (!currentUser) {
     return (
-      <ThemedView style={[styles.centered, { backgroundColor }]}>
+      <ThemedView style={styles.centered}>
+        <View style={styles.emptyStateIcon}>
+          <ThemedText style={styles.emptyStateEmoji}>💬</ThemedText>
+        </View>
         <ThemedText style={styles.errorText}>Debes iniciar sesión para usar el chat</ThemedText>
         <TouchableOpacity 
-          style={[styles.button, { backgroundColor: tintColor }]} 
+          style={styles.button} 
           onPress={() => router.push('../index')}
         >
           <ThemedText style={styles.buttonText}>Iniciar sesión</ThemedText>
@@ -197,7 +230,7 @@ export default function ChatScreen() {
 
   if (loading || loadingProfile) {
     return (
-      <ThemedView style={[styles.centered, { backgroundColor }]}>
+      <ThemedView style={styles.centered}>
         <ActivityIndicator size="large" color={tintColor} />
         <ThemedText style={styles.loadingText}>Cargando chat...</ThemedText>
       </ThemedView>
@@ -205,10 +238,11 @@ export default function ChatScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={styles.container}>
       <Stack.Screen options={{ 
         title: displayName,
-        headerBackTitle: 'Chats'
+        headerBackTitle: 'Chats',
+        headerTintColor: theme === 'dark' ? '#FFB6D9' : '#D6336C',
       }} />
       
       <KeyboardAvoidingView 
@@ -226,31 +260,33 @@ export default function ChatScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           ListEmptyComponent={
             <View style={styles.emptyState}>
+              <View style={styles.emptyStateIcon}>
+                <ThemedText style={styles.emptyStateEmoji}>💭</ThemedText>
+              </View>
               <ThemedText style={styles.emptyStateText}>
-                💬 Inicia la conversación con {displayName}
+                Inicia la conversación con {displayName}
               </ThemedText>
               <ThemedText style={styles.emptyStateSubtext}>
-                Escribe un mensaje para comenzar el chat
+                Escribe un mensaje para comenzar el chat y compartir experiencias
               </ThemedText>
             </View>
           }
         />
         
-        <View style={[styles.inputContainer, { borderColor, backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.inputContainer}>
           <TextInput
-            style={[styles.textInput, { backgroundColor: backgroundColor, borderColor }]}
+            style={styles.textInput}
             value={newMessage}
             onChangeText={setNewMessage}
-            placeholder={`Escribe un mensaje a ${displayName}...`} 
-            placeholderTextColor="#666"
+            placeholder={`Escribe un mensaje a ${displayName}...`}
+            placeholderTextColor={theme === 'dark' ? '#9CA3AF' : '#6B7280'}
             multiline
             maxLength={500}
             editable={!sending}
           />
           <TouchableOpacity 
             style={[
-              styles.sendButton, 
-              { backgroundColor: tintColor },
+              styles.sendButton,
               (!newMessage.trim() || sending) && styles.sendButtonDisabled
             ]}
             onPress={sendMessage}
@@ -267,60 +303,3 @@ export default function ChatScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  container: { flex: 1 },
-  flex: { flex: 1 },
-  messagesList: { padding: 15, paddingBottom: 10 },
-  messageContainer: { marginBottom: 12 },
-  currentUserContainer: { alignItems: 'flex-end' },
-  otherUserContainer: { alignItems: 'flex-start' },
-  messageBubble: { 
-    maxWidth: '80%', 
-    padding: 12, 
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  currentUserBubble: { borderBottomRightRadius: 4 },
-  otherUserBubble: { borderBottomLeftRadius: 4, borderWidth: 1 },
-  messageText: { fontSize: 16, lineHeight: 20 },
-  timestamp: { fontSize: 11, marginTop: 4, alignSelf: 'flex-end' },
-  inputContainer: { 
-    flexDirection: 'row', 
-    padding: 15, 
-    borderTopWidth: 1, 
-    alignItems: 'flex-end' 
-  },
-  textInput: { 
-    flex: 1, 
-    borderWidth: 1, 
-    borderRadius: 20, 
-    paddingHorizontal: 15, 
-    paddingVertical: 10, 
-    paddingTop: 10, 
-    marginRight: 10, 
-    maxHeight: 100, 
-    fontSize: 16 
-  },
-  sendButton: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  sendButtonDisabled: { opacity: 0.5 },
-  sendButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50 },
-  emptyStateText: { fontSize: 16, marginBottom: 8, opacity: 0.7, textAlign: 'center' },
-  emptyStateSubtext: { fontSize: 14, opacity: 0.5, textAlign: 'center' },
-  errorText: { fontSize: 16, marginBottom: 20, textAlign: 'center' },
-  button: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
-  buttonText: { color: 'white', fontWeight: 'bold' },
-  loadingText: { marginTop: 10, fontSize: 14, opacity: 0.7 },
-});

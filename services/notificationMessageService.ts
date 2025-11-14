@@ -9,14 +9,14 @@ export interface NotificationMessageData {
   sound?: boolean;
 }
 
-// CLASE PARA NOTIFICACIONES PUSH (SOLO PUSH)
+// CLASS FOR PUSH NOTIFICATIONS (PUSH ONLY)
 export class NotificationMessageService {
-  // Verificar si estamos en móvil
+
   static isMobile(): boolean {
     return Platform.OS !== 'web';
   }
 
-  // Obtener el token push de un usuario desde Firestore
+  // Get a user's push token from Firestore
   static async getUserPushToken(userId: string): Promise<string | null> {
     if (!this.isMobile()) {
       console.log('🔕 Web: Notificaciones deshabilitadas');
@@ -38,7 +38,28 @@ export class NotificationMessageService {
     }
   }
 
-  // Guardar token push del usuario
+  // Get user data including name
+  static async getUserData(userId: string): Promise<{ 
+    nombre?: string; 
+    apellidos?: string;
+    display?: string;
+    email?: string 
+  } | null> {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        return userDoc.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting user data:', error);
+      return null;
+    }
+  }
+
+  // Save user push token
   static async saveUserPushToken(userId: string, token: string): Promise<void> {
     if (!this.isMobile()) return;
     
@@ -55,7 +76,7 @@ export class NotificationMessageService {
     }
   }
 
-  // Enviar notificación push
+  // Send push notification
   static async sendPushNotification(
     expoPushToken: string, 
     message: string, 
@@ -110,11 +131,11 @@ export class NotificationMessageService {
     }
   }
 
-  // Enviar notificación a un usuario específico (SOLO PUSH)
+  // Send notification to a specific user (PUSH ONLY)
   static async sendNotificationToUser(
     userId: string, 
     message: string, 
-    senderName: string,
+    senderId: string,
     chatId?: string
   ): Promise<void> {
     if (!this.isMobile()) {
@@ -124,6 +145,27 @@ export class NotificationMessageService {
 
     try {
       console.log(`📨 Intentando enviar notificación PUSH a usuario: ${userId}`);
+      
+      // Obtener el nombre del remitente - CORREGIDO
+      const senderData = await this.getUserData(senderId);
+      
+      // Primero intenta con nombre + apellidos, luego con display, luego con email
+      let senderName = 'Usuario';
+      
+      if (senderData) {
+        if (senderData.nombre && senderData.apellidos) {
+          senderName = `${senderData.nombre} ${senderData.apellidos}`.trim();
+        } else if (senderData.nombre) {
+          senderName = senderData.nombre;
+        } else if (senderData.display) {
+          senderName = senderData.display;
+        } else if (senderData.email) {
+          senderName = senderData.email.split('@')[0];
+        }
+      }
+      
+      console.log(`👤 Nombre del remitente para notificación: ${senderName}`);
+      
       const userToken = await this.getUserPushToken(userId);
       
       if (userToken) {
@@ -131,15 +173,13 @@ export class NotificationMessageService {
         console.log('✅ Notificación PUSH enviada exitosamente a:', userId);
       } else {
         console.log('❌ Usuario no tiene token push registrado. NO se enviará notificación:', userId);
-        // No se envía nada si no hay token
       }
     } catch (error) {
       console.error('❌ Error sending notification to user:', error);
-      // No se envía nada si hay error
     }
   }
 
-  // Verificar si un usuario tiene token push
+  // Check if a user has a push token
   static async hasPushToken(userId: string): Promise<boolean> {
     if (!this.isMobile()) return false;
     const token = await this.getUserPushToken(userId);
