@@ -55,7 +55,7 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // Usar el color scheme del sistema
+  // Use the system color scheme
   const theme = colorScheme || 'light';
   const styles = getChatMessageStyles(theme);
   const tintColor = useThemeColor({}, 'tint');
@@ -90,7 +90,7 @@ export default function ChatScreen() {
     return () => unsubscribe();
   }, [chatId, currentUser]);
 
-  // Función para obtener el nombre del usuario actual desde Firestore
+  // Function to get the current user's name from Firestore
   const getCurrentUserName = async (): Promise<string> => {
     if (!currentUser) return 'Alguien';
     
@@ -100,7 +100,7 @@ export default function ChatScreen() {
       
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        // Primero intenta con nombre + apellidos
+        // First try with first name + last name
         if (userData.nombre && userData.apellidos) {
           return `${userData.nombre} ${userData.apellidos}`.trim();
         } else if (userData.nombre) {
@@ -113,7 +113,7 @@ export default function ChatScreen() {
       console.error('Error obteniendo nombre del usuario:', error);
     }
     
-    // Fallback al email o nombre por defecto
+    // Fallback to email or default name
     return currentUser.email ? currentUser.email.split('@')[0] : 'Alguien';
   };
 
@@ -137,16 +137,16 @@ export default function ChatScreen() {
         lastMessageTime: serverTimestamp()
       });
 
-      // CORREGIDO: Enviar notificación con el senderId en lugar del nombre
+      
       if (otherUserId && typeof otherUserId === 'string') {
-        // Obtener el nombre actual para logging (opcional)
+        
         const senderName = await getCurrentUserName();
         console.log(`📤 Enviando notificación como: ${senderName}`);
         
         NotificationMessageService.sendNotificationToUser(
           otherUserId,
           newMessage.trim(),
-          currentUser.uid, // ← CORRECCIÓN: Enviar el ID del remitente, no el nombre
+          currentUser.uid, 
           chatId
         ).catch(error => {
           console.error('Error enviando notificación:', error);
