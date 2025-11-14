@@ -68,7 +68,7 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: '#4ADE80', // Verde para en línea
+      backgroundColor: '#4ADE80',
       borderWidth: 2,
       borderColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
     },
@@ -79,7 +79,7 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: '#9CA3AF', // Gris para offline
+      backgroundColor: '#9CA3AF',
       borderWidth: 2,
       borderColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
     },
@@ -106,11 +106,10 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       marginBottom: 4,
       fontWeight: '500',
     },
-    messageIndicator: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: theme === 'dark' ? '#B794F6' : '#FF6B9D',
+    readStatus: {
+      fontSize: 12,
+      fontWeight: '600',
+      marginTop: 2,
     },
     emptyState: {
       alignItems: 'center',

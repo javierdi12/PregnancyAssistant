@@ -24,6 +24,8 @@ interface Chat {
   lastMessage: string;
   lastMessageTime: any;
   createdAt: any;
+  lastMessageSender?: string;
+  lastMessageRead?: boolean;
 }
 
 interface OtherUser {
@@ -47,11 +49,9 @@ export default function ChatsListScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const defaultAvatar = require('@/assets/images/default-avatar.png');
 
-  // Usar el color scheme del sistema
   const theme = colorScheme || 'light';
   const styles = getChatsListStyles(theme);
 
-  // Function to check if user is online
   const checkUserOnlineStatus = async (userId: string): Promise<boolean> => {
     try {
       const userRef = doc(db, 'users', userId);
@@ -66,7 +66,6 @@ export default function ChatsListScreen() {
           const now = new Date();
           const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
           
-          // Considerar online si se conectó en los últimos 5 minutos
           return diffInMinutes < 5;
         }
       }
@@ -77,7 +76,6 @@ export default function ChatsListScreen() {
     }
   };
 
-  // Function to subscribe to changes in a user's profile
   const subscribeToUserProfile = (userId: string) => {
     const userRef = doc(db, 'users', userId);
     
@@ -88,7 +86,6 @@ export default function ChatsListScreen() {
           ? `${userData.nombre} ${userData.apellidos}`
           : userData.nombre || 'Usuario';
         
-        // Verificar estado online
         const isOnline = await checkUserOnlineStatus(userId);
         
         setOtherUsers(prev => ({
@@ -132,7 +129,9 @@ export default function ChatsListScreen() {
             participantPhotos: data.participantPhotos || {},
             lastMessage: data.lastMessage || 'Inicia la conversación',
             lastMessageTime: data.lastMessageTime || data.createdAt,
-            createdAt: data.createdAt
+            createdAt: data.createdAt,
+            lastMessageSender: data.lastMessageSender,
+            lastMessageRead: data.lastMessageRead
           } as Chat;
         });
         
@@ -140,7 +139,6 @@ export default function ChatsListScreen() {
         setChats(validChats);
         setLoading(false);
 
-        // Subscribe to other users' profiles
         const newUnsubscribes: (() => void)[] = [];
         for (const chat of validChats) {
           const otherUserId = chat.participants?.find(id => id !== currentUser.uid);
@@ -162,6 +160,37 @@ export default function ChatsListScreen() {
       unsubscribeChats();
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
+  }, [currentUser]);
+
+  // Suscribirse a cambios en el estado de lectura
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribeChatsReadStatus = onSnapshot(
+      query(collection(db, 'chats'), 
+        where('participants', 'array-contains', currentUser.uid)
+      ),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'modified') {
+            const chatData = change.doc.data();
+            setChats(prevChats => 
+              prevChats.map(chat => 
+                chat.id === change.doc.id 
+                  ? { 
+                      ...chat, 
+                      lastMessageRead: chatData.lastMessageRead,
+                      lastMessageSender: chatData.lastMessageSender
+                    }
+                  : chat
+              )
+            );
+          }
+        });
+      }
+    );
+
+    return () => unsubscribeChatsReadStatus();
   }, [currentUser]);
 
   const getOtherParticipant = (chat: Chat) => {
@@ -229,6 +258,9 @@ export default function ChatsListScreen() {
     
     if (!otherUser.id) return null;
     
+    const isMyMessage = item.lastMessageSender === currentUser?.uid;
+    const isRead = item.lastMessageRead === true;
+    
     return (
       <TouchableOpacity 
         style={styles.chatItem}
@@ -259,8 +291,15 @@ export default function ChatsListScreen() {
           <ThemedText style={styles.time}>
             {formatTime(item.lastMessageTime)}
           </ThemedText>
-          {item.lastMessage && (
-            <View style={styles.messageIndicator} />
+          
+          {isMyMessage && item.lastMessage && (
+            <ThemedText style={{
+              fontSize: 12,
+              marginTop: 4,
+              color: isRead ? '#007AFF' : '#8E8E93'
+            }}>
+              {isRead ? '✓✓' : '✓'}
+            </ThemedText>
           )}
         </View>
       </TouchableOpacity>

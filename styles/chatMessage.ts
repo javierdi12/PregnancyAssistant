@@ -60,16 +60,31 @@ export const getChatMessageStyles = (theme: 'light' | 'dark') =>
     otherUserMessageText: {
       color: theme === 'dark' ? '#E5E7EB' : '#374151',
     },
+    messageFooter: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      marginTop: 6,
+    },
     timestamp: {
       fontSize: 11,
-      marginTop: 6,
-      alignSelf: 'flex-end',
+      marginRight: 6,
     },
     currentUserTimestamp: {
       color: 'rgba(255,255,255,0.7)',
     },
     otherUserTimestamp: {
       color: theme === 'dark' ? '#9CA3AF' : '#6B7280',
+    },
+    readStatus: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    readStatusRead: {
+      color: '#007AFF', // Azul para leído
+    },
+    readStatusUnread: {
+      color: 'rgba(255,255,255,0.7)', // Gris claro para no leído
     },
     inputContainer: {
       flexDirection: 'row',
@@ -176,41 +191,5 @@ export const getChatMessageStyles = (theme: 'light' | 'dark') =>
       fontSize: 15,
       color: theme === 'dark' ? '#D4A5C0' : '#9E7B8E',
       fontWeight: '500',
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme === 'dark' ? '#FFB6D9' : '#C62368',
-    },
-    // Additional styles for typing indicator
-    typingContainer: {
-      padding: 12,
-      marginBottom: 8,
-      alignSelf: 'flex-start',
-    },
-    typingBubble: {
-      backgroundColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: theme === 'dark' ? '#3D3147' : '#FFE4ED',
-    },
-    typingText: {
-      fontSize: 14,
-      color: theme === 'dark' ? '#D4A5C0' : '#9E7B8E',
-      fontStyle: 'italic',
-    },
-    // Styles for message status (delivered, read)
-    messageStatus: {
-      fontSize: 10,
-      marginTop: 2,
-      alignSelf: 'flex-end',
-    },
-    deliveredStatus: {
-      color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
-    },
-    readStatus: {
-      color: theme === 'dark' ? '#B794F6' : '#FF6B9D',
     },
   });

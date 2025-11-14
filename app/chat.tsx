@@ -10,6 +10,7 @@ import { getChatMessageStyles } from '@/styles/chatMessage';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   addDoc,
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -37,6 +38,8 @@ interface Message {
   senderId: string;
   timestamp: any;
   read: boolean;
+  readAt?: any;
+  readBy?: string[];
 }
 
 export default function ChatScreen() {
@@ -55,10 +58,34 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // Usar el color scheme del sistema
   const theme = colorScheme || 'light';
   const styles = getChatMessageStyles(theme);
   const tintColor = useThemeColor({}, 'tint');
+
+  // Función para obtener el nombre del usuario actual desde Firestore
+  const getCurrentUserName = async (): Promise<string> => {
+    if (!currentUser) return 'Alguien';
+    
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.nombre && userData.apellidos) {
+          return `${userData.nombre} ${userData.apellidos}`.trim();
+        } else if (userData.nombre) {
+          return userData.nombre;
+        } else if (userData.display) {
+          return userData.display;
+        }
+      }
+    } catch (error) {
+      console.error('Error obteniendo nombre del usuario:', error);
+    }
+    
+    return currentUser.email ? currentUser.email.split('@')[0] : 'Alguien';
+  };
 
   useEffect(() => {
     if (!chatId || typeof chatId !== 'string' || !currentUser) {
@@ -69,7 +96,7 @@ export default function ChatScreen() {
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const messagesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -77,6 +104,33 @@ export default function ChatScreen() {
       
       setMessages(messagesData);
       setLoading(false);
+
+      // 📖 MARCAR MENSAJES COMO LEÍDOS cuando el usuario abre el chat
+      const unreadMessages = messagesData.filter(
+        msg => msg.senderId !== currentUser.uid && !msg.read
+      );
+
+      if (unreadMessages.length > 0) {
+        try {
+          for (const message of unreadMessages) {
+            const messageRef = doc(db, 'chats', chatId, 'messages', message.id);
+            await updateDoc(messageRef, {
+              read: true,
+              readAt: serverTimestamp(),
+              readBy: arrayUnion(currentUser.uid)
+            });
+          }
+          console.log(`✅ ${unreadMessages.length} mensajes marcados como leídos`);
+
+          // Actualizar el estado del chat
+          const chatRef = doc(db, 'chats', chatId);
+          await updateDoc(chatRef, {
+            lastMessageRead: true
+          });
+        } catch (error) {
+          console.error('Error marcando mensajes como leídos:', error);
+        }
+      }
 
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -90,33 +144,6 @@ export default function ChatScreen() {
     return () => unsubscribe();
   }, [chatId, currentUser]);
 
-  // Función para obtener el nombre del usuario actual desde Firestore
-  const getCurrentUserName = async (): Promise<string> => {
-    if (!currentUser) return 'Alguien';
-    
-    try {
-      const userRef = doc(db, 'users', currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        // Primero intenta con nombre + apellidos
-        if (userData.nombre && userData.apellidos) {
-          return `${userData.nombre} ${userData.apellidos}`.trim();
-        } else if (userData.nombre) {
-          return userData.nombre;
-        } else if (userData.display) {
-          return userData.display;
-        }
-      }
-    } catch (error) {
-      console.error('Error obteniendo nombre del usuario:', error);
-    }
-    
-    // Fallback al email o nombre por defecto
-    return currentUser.email ? currentUser.email.split('@')[0] : 'Alguien';
-  };
-
   const sendMessage = async () => {
     if (!newMessage.trim() || !chatId || typeof chatId !== 'string' || !currentUser) return;
 
@@ -128,25 +155,26 @@ export default function ChatScreen() {
         text: newMessage.trim(),
         senderId: currentUser.uid,
         timestamp: serverTimestamp(),
-        read: false
+        read: false,
+        readBy: []
       });
 
       const chatRef = doc(db, 'chats', chatId);
       await updateDoc(chatRef, {
         lastMessage: newMessage.trim(),
-        lastMessageTime: serverTimestamp()
+        lastMessageTime: serverTimestamp(),
+        lastMessageSender: currentUser.uid,
+        lastMessageRead: false
       });
 
-      // CORREGIDO: Enviar notificación con el senderId en lugar del nombre
       if (otherUserId && typeof otherUserId === 'string') {
-        // Obtener el nombre actual para logging (opcional)
         const senderName = await getCurrentUserName();
         console.log(`📤 Enviando notificación como: ${senderName}`);
         
         NotificationMessageService.sendNotificationToUser(
           otherUserId,
           newMessage.trim(),
-          currentUser.uid, // ← CORRECCIÓN: Enviar el ID del remitente, no el nombre
+          currentUser.uid,
           chatId
         ).catch(error => {
           console.error('Error enviando notificación:', error);
@@ -194,12 +222,22 @@ export default function ChatScreen() {
           ]}>
             {item.text}
           </ThemedText>
-          <ThemedText style={[
-            styles.timestamp,
-            isCurrentUser ? styles.currentUserTimestamp : styles.otherUserTimestamp
-          ]}>
-            {formatTime(item.timestamp)}
-          </ThemedText>
+          <View style={styles.messageFooter}>
+            <ThemedText style={[
+              styles.timestamp,
+              isCurrentUser ? styles.currentUserTimestamp : styles.otherUserTimestamp
+            ]}>
+              {formatTime(item.timestamp)}
+            </ThemedText>
+            {isCurrentUser && (
+              <ThemedText style={[
+                styles.readStatus,
+                item.read ? styles.readStatusRead : styles.readStatusUnread
+              ]}>
+                {item.read ? '✓✓' : '✓'}
+              </ThemedText>
+            )}
+          </View>
         </View>
       </View>
     );
