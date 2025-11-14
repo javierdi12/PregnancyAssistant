@@ -14,7 +14,8 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       backgroundColor: theme === 'dark' ? '#121212' : '#FFF5F8',
     },
     header: {
-      padding: 20,
+      paddingTop: 30,
+      paddingHorizontal: 20,
       paddingBottom: 10,
       alignItems: 'center',
     },
