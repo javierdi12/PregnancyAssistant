@@ -77,14 +77,14 @@ export default function UserProfileScreen() {
     return;
   }
 
-  // Evitar enviar mensaje a uno mismo
+  // Restablecer completamente la navegación
   if (currentUser.uid === userId) {
     Alert.alert('Info', 'No puedes enviarte mensajes a ti mismo');
     return;
   }
 
   try {
-    // Función helper para obtener perfil de usuario
+    // Helper function to obtain user profile
     const getUserProfile = async (userId: string) => {
       try {
         const userDoc = await getDoc(doc(db, 'users', userId));
@@ -95,26 +95,26 @@ export default function UserProfileScreen() {
       }
     };
 
-    // Obtener perfiles de ambos usuarios
+    // Get profiles for both users
     const currentUserProfile = await getUserProfile(currentUser.uid);
     const targetUserProfile = await getUserProfile(userId);
 
-    // Determinar nombres con fallbacks
+     // Determine names with fallbacks
     const currentUserName = currentUserProfile?.nombre || currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario';
     const targetUserName = targetUserProfile?.nombre || user?.nombre || 'Usuario';
 
-    // Obtener fotos de perfil con fallbacks
+    // Get profile photos with fallbacks
     const currentUserPhoto = currentUser.photoURL || currentUserProfile?.photoURL || '';
     const targetUserPhoto = user?.photoURL || targetUserProfile?.photoURL || '';
 
-    // Crear o obtener el chat entre los dos usuarios
+    // Create or obtain the chat between the two users
     const chatId = [currentUser.uid, userId].sort().join('_');
     const chatRef = doc(db, 'chats', chatId);
     
     const chatSnap = await getDoc(chatRef);
     
     if (!chatSnap.exists()) {
-      // Primero crear el chat
+      // First, create the chat
       await setDoc(chatRef, {
         participants: [currentUser.uid, userId],
         participantNames: {
@@ -129,7 +129,7 @@ export default function UserProfileScreen() {
         }
       });
 
-      // Luego agregar el mensaje inicial
+      // Then add the initial message
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
         senderId: currentUser.uid,
@@ -138,7 +138,7 @@ export default function UserProfileScreen() {
       });
     }
     
-    // Navegar a la pantalla de chat
+   // Navigate to the chat screen
     router.push({
       pathname: '/chat',
       params: { 

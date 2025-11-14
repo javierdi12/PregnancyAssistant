@@ -146,10 +146,10 @@ export class NotificationMessageService {
     try {
       console.log(`📨 Intentando enviar notificación PUSH a usuario: ${userId}`);
       
-      // Obtener el nombre del remitente - CORREGIDO
+       // Get the sender's name
       const senderData = await this.getUserData(senderId);
       
-      // Primero intenta con nombre + apellidos, luego con display, luego con email
+      // First try with first name + last name, then with display name, then with email address.
       let senderName = 'Usuario';
       
       if (senderData) {

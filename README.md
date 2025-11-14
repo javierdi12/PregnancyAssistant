@@ -1,50 +1,98 @@
-# Welcome to your Expo app 👋
+# Pregnancy Assistant - Aplicación de Acompañamiento para Embarazadas
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Autores
+- **Javier Diaz**
+- **Pedro Vega**
+- **Maikel Jimenez**
 
-## Get started
+---
 
-1. Install dependencies
+## Descripción del Proyecto
+**Pregnancy Assistant** es una aplicación móvil diseñada para brindar apoyo y acompañamiento a mujeres durante su embarazo.  
+Incluye funcionalidades de chat en tiempo real, notificaciones push, autenticación y una interfaz accesible y moderna.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+##  Características Principales
+-  **Chat en tiempo real** entre usuarias  
+-  **Notificaciones push** con Firebase Cloud Messaging  
+-  **Interfaz con tema claro/oscuro**  
+-  **Eliminación de conversaciones**  
+-  **Autenticación de usuarios** (Google / email)  
+-  **Integración en tiempo real con Firestore**
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+##  Tecnologías Utilizadas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### **Frontend / Framework**
+- Expo SDK 49+
+- React Native
+- TypeScript
+- Expo Router
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### **Backend / Servicios**
+- Firebase Firestore
+- Firebase Authentication
+- Firebase Cloud Messaging (FCM)
 
-## Get a fresh project
+---
 
-When you're ready, run:
+##  Prerrequisitos
+- Node.js 16 o superior  
+- npm, yarn o pnpm  
+- Cuenta de Expo  
+- Proyecto configurado en Firebase  
+- Dispositivo móvil o emulador
 
-```bash
-npm run reset-project
-```
+---
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+#  Instalación y Configuración
 
-## Learn more
+## 1️⃣ Clonar el repositorio
 
-To learn more about developing your project with Expo, look at the following resources:
+```sh
+git clone https://github.com/javierdi12/PregnancyAssistant.git
+cd PregnancyAssistant
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+##  Instalar dependencias principales
 
-## Join the community
+npm install
+yarn install
 
-Join our community of developers creating universal apps.
+Instalar dependencias necesarias
+Expo Router
+npm install expo-router
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Async Storage
+npx expo install @react-native-async-storage/async-storage
+
+Firebase
+npm install firebase
+
+Notificaciones Push (FCM)
+npx expo install expo-notifications
+
+ Tipos para React y React Native
+npm install --save-dev @types/react @types/react-native
+
+Ejecutar el proyecto
+npx expo start
+npm start -c
+
+
+## 📄 Licencia
+
+Este proyecto está bajo **Licencia Propietaria**.  
+© 2025 Darlen Javier Díaz Urbina. Todos los derechos reservados.
+
+### Permisos:
+-  Visualizar y descargar el código
+-  Usar para fines educativos
+-  Dar crédito al autor original
+
+### Restricciones:
+-  Uso comercial
+-  Modificación o creación de obras derivadas
+-  Distribución sin autorización
+-  Integración en proyectos cerrados

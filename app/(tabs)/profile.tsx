@@ -47,7 +47,7 @@ const handleSignOut = async () => {
     await signOut(auth);
     await AsyncStorage.setItem(AUTH_STATUS_KEY, 'false');
 
-    // Resetear completamente la navegación
+    // Completely reset navigation
     router.dismissAll();
     router.replace('/');
     

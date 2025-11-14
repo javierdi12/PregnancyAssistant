@@ -54,7 +54,7 @@ export default function ChatsListScreen() {
   const theme = colorScheme || 'light';
   const styles = getChatsListStyles(theme);
 
-  // Función para checkear estado online
+  // Function to check online status
   const checkUserOnlineStatus = async (userId: string): Promise<boolean> => {
     try {
       const userRef = doc(db, 'users', userId);
@@ -79,7 +79,7 @@ export default function ChatsListScreen() {
     }
   };
 
-  // Función para suscribirse a cambios de perfil
+  // Function to subscribe to profile changes
   const subscribeToUserProfile = (userId: string) => {
     const userRef = doc(db, 'users', userId);
     
@@ -166,7 +166,7 @@ export default function ChatsListScreen() {
     };
   }, [currentUser]);
 
-  // Función para eliminar una conversación
+  // Function to delete a conversation
   const deleteChat = async (chatId: string, chatName: string) => {
     Alert.alert(
       'Eliminar conversación',
@@ -182,12 +182,12 @@ export default function ChatsListScreen() {
           onPress: async () => {
             setDeletingChatId(chatId);
             try {
-              // Eliminar el chat de la colección de chats
+              // Remove the chat from the chat collection
               const chatRef = doc(db, 'chats', chatId);
               await deleteDoc(chatRef);
               
               console.log('✅ Conversación eliminada:', chatId);
-              // No necesitamos hacer setChats porque Firestore se actualiza automáticamente
+              // We don't need to do setChats because Firestore updates automatically.
             } catch (error) {
               console.error('Error eliminando conversación:', error);
               Alert.alert('Error', 'No se pudo eliminar la conversación');
@@ -200,7 +200,7 @@ export default function ChatsListScreen() {
     );
   };
 
-  // Función para manejar el press largo (eliminar)
+  // Function to handle long press (delete)
   const handleLongPress = (chat: Chat, otherUser: OtherUser) => {
     deleteChat(chat.id, otherUser.name);
   };

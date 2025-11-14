@@ -21,13 +21,13 @@ export function useGoogleAuth() {
     selectAccount: true,
   });
 
-  // Función para guardar perfil de Google en Firestore
+  // Function to save Google profile in Firestore
   const saveGoogleUserProfile = async (userId: string, userEmail: string | null, displayName: string | null, photoURL: string | null) => {
     try {
       await setDoc(doc(db, 'users', userId), {
         email: userEmail,
         displayName: displayName || userEmail?.split('@')[0] || 'Usuario Google',
-        role: 'google', // Rol por defecto para usuarios de Google
+        role: 'google', // Default role for Google users
         photoURL: photoURL,
         provider: 'google',
         createdAt: serverTimestamp(),
@@ -66,7 +66,7 @@ export function useGoogleAuth() {
           const userCredential = await signInWithCredential(auth, credential);
           const user = userCredential.user;
 
-          // Guardar perfil del usuario en Firestore
+          // Save user profile in Firestore
           await saveGoogleUserProfile(
             user.uid, 
             user.email, 
@@ -74,7 +74,7 @@ export function useGoogleAuth() {
             user.photoURL
           );
 
-          // Esperamos un momento para asegurarnos que Firebase procese la autenticación
+          // We wait a moment to ensure that Firebase processes the authentication.
           await new Promise(resolve => setTimeout(resolve, 500));
           
         } catch (error) {
