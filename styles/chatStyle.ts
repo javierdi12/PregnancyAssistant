@@ -44,14 +44,8 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       backgroundColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
       borderWidth: 1,
       borderColor: theme === 'dark' ? '#3D3147' : '#FFE4ED',
-      shadowColor: theme === 'dark' ? '#000' : '#D6336C',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
     },
     avatarContainer: {
-      position: 'relative',
       marginRight: 16,
     },
     avatar: {
@@ -60,28 +54,6 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       borderRadius: 28,
       borderWidth: 2,
       borderColor: theme === 'dark' ? '#B794F6' : '#FFB6D9',
-    },
-    onlineIndicator: {
-      position: 'absolute',
-      bottom: 2,
-      right: 2,
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: '#4ADE80', // Verde para en línea
-      borderWidth: 2,
-      borderColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
-    },
-    offlineIndicator: {
-      position: 'absolute',
-      bottom: 2,
-      right: 2,
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: '#9CA3AF', // Gris para offline
-      borderWidth: 2,
-      borderColor: theme === 'dark' ? '#2A2335' : '#FFFFFF',
     },
     chatInfo: {
       flex: 1,
@@ -106,11 +78,10 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       marginBottom: 4,
       fontWeight: '500',
     },
-    messageIndicator: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: theme === 'dark' ? '#B794F6' : '#FF6B9D',
+    readStatus: {
+      fontSize: 12,
+      fontWeight: '600',
+      marginTop: 2,
     },
     emptyState: {
       alignItems: 'center',
@@ -157,11 +128,6 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
       paddingVertical: 14,
       backgroundColor: theme === 'dark' ? '#B794F6' : '#FF6B9D',
       borderRadius: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
-      shadowRadius: 6,
-      elevation: 6,
     },
     buttonText: {
       color: '#FFFFFF',
@@ -191,5 +157,18 @@ export const getChatsListStyles = (theme: 'light' | 'dark') =>
     },
     pregnancyIconText: {
       fontSize: 40,
+    },
+   
+    deletingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.1)',
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1,
     },
   });
