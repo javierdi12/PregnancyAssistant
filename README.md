@@ -55,7 +55,7 @@ Incluye funcionalidades de chat en tiempo real, notificaciones push, autenticaci
 git clone https://github.com/javierdi12/PregnancyAssistant.git
 cd PregnancyAssistant
 
-##  Instalar dependencias principales
+Instalar dependencias principales
 
 npm install
 yarn install
@@ -79,7 +79,7 @@ npm install --save-dev @types/react @types/react-native
 Ejecutar el proyecto
 npx expo start
 npm start -c
-
+```
 
 ## 📄 Licencia
 
