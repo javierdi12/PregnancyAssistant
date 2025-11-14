@@ -7,6 +7,8 @@ import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications'; // 🆕 AÑADE ESTO
+
 import * as NotificationService from '../services/notificationService';
 
 LogBox.ignoreLogs(['useInsertionEffect must not schedule updates']);
@@ -17,6 +19,8 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  usePushNotifications();
+  
   useEffect(() => {
     // Schedule daily reminders when the app loads
     NotificationService.scheduleDailyFoodReminders();
